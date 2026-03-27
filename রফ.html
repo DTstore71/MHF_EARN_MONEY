@@ -186,12 +186,20 @@
     <div class="stat-card"><h3>Emails</h3><p id="stat_e">0</p></div>
     <div class="stat-card"><h3>Approved</h3><p id="stat_a" style="color:var(--success)">0</p></div>
     <div class="stat-card"><h3>Pending Pay</h3><p id="stat_p" style="color:var(--danger)">0</p></div>
+    <div class="stat-card">
+    <h3>Global Rate</h3>
+    <p id="todayRate">৳0.00</p>
 </div>
+</div>
+
+
 
 <div class="toolbar">
     <input type="text" id="finder" placeholder="Search by Username..." oninput="refresh()">
     <button onclick="bulkExport()" class="btn btn-p"><i class="fas fa-file-export"></i> Export New</button>
-    <button onclick="globalRate()" class="btn btn-s"><i class="fas fa-coins"></i> Set Global Rate</button>
+ <button id="globalRateBtn" class="btn btn-s">
+    <i class="fas fa-coins"></i> Set Global Rate
+</button>
 </div>
 
 <div class="table-container">
@@ -271,15 +279,39 @@ function exit(){
     localStorage.removeItem('mhf_session');
     location.reload();
 }
-
-window.onload=()=>{
+window.onload = () => {
+    // Check session
     if(localStorage.getItem('mhf_session')){
         document.getElementById('auth').style.display='none';
         sync();
     }
-}
 
-function sync(){
+    const rateEl = document.getElementById("todayRate");
+
+    // Load current global rate from Firebase
+    db.ref('admin_settings/globalPrice').once('value').then(snap=>{
+        const rate = snap.val() || 0;
+        rateEl.textContent = "৳" + parseFloat(rate).toFixed(2);
+    });
+
+    // Global Rate setup
+    async function globalRate(){
+        const r = prompt("Enter New Global Rate (৳):");
+        if(!r || isNaN(r)) return;
+        const rate = parseFloat(r);
+
+        const updates = {};
+        Object.keys(raw).forEach(id => { 
+            if(!raw[id].hidden) updates[`admin_messages/${id}/basePrice`] = rate; 
+        });
+        updates[`admin_settings/globalPrice`] = rate;
+        await db.ref().update(updates);
+
+        rateEl.textContent = "৳ " + rate.toFixed(2);
+        alert("Global Rate Updated!");
+    }
+    document.getElementById('globalRateBtn').onclick = globalRate;
+};function sync(){
     showLoad(30);
     db.ref('users').on('value',s=>{
         users=s.val()||{};
@@ -493,18 +525,6 @@ function bulkExport(){
         if(!v.exported) up[`admin_messages/${id}/exported`] = true;
     });
     db.ref().update(up);
-}
-
-// --- Global Rate ---
-async function globalRate(){
-    const r = prompt("Enter New Global Rate (৳):");
-    if(!r || isNaN(r)) return;
-    showLoad(20);
-    const up = {};
-    Object.keys(raw).forEach(id => { if(!raw[id].hidden) up[`admin_messages/${id}/basePrice`] = parseFloat(r); });
-    await db.ref().update(up);
-    showLoad(100);
-    alert("Global Rate Updated!");
 }
 
 // --- Close Modal ---

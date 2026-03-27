@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MHF Earn Money — Advanced Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+body {
+  font-family: 'Hind Siliguri', sans-serif;
+  background: #f0f2f5;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #fff;
+  background: #1d4ed8;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.toolbar select,
+.toolbar input,
+.toolbar button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.toolbar input { width: 120px; }
+
+.toolbar button { background: #2563eb; color: #fff; transition: 0.2s; }
+.toolbar button:hover { transform: translateY(-2px); }
+
+.table-wrap {
+  overflow-x: auto;
+  background: #fff;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+table { width: 100%; border-collapse: collapse; min-width: 700px; }
+thead th { background: #2563eb; color: #fff; padding: 10px; border: 1px solid #000; text-align: center; }
+tbody td { padding: 8px; border: 1px solid #000; text-align: center; }
+
+tbody tr.approved { background: #ecfdf3; }
+tbody tr.rejected { background: #fee2e2; }
+tbody tr.pending { background: #fff8dc; }
+
+.icon-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 2px;
+  font-size: 14px;
+}
+
+.icon-btn.approve { background: #28a745; color: #fff; }
+.icon-btn.reject { background: #dc3545; color: #fff; }
+.icon-btn.delete { background: #000; color: #fff; }
+.icon-btn.hide { background: #6c757d; color: #fff; }
+
+#toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #111;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 20px;
+  opacity: 0;
+  transition: 0.4s;
+  font-weight: bold;
+  z-index: 9999;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.pagination {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.pagination button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+.pagination button.disabled { background: #999; cursor: not-allowed; }
+
+.back-btn { background: #6c757d; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<h1><i class="fas fa-user-shield"></i> Admin Panel For Coin — MHF Earn Money</h1>
+
+<div class="toolbar">
+  <select id="sectorSelect"><option value=""></option></select>
+  <input type="number" id="amountInput" placeholder="Amount" />
+  <button onclick="payAmount()">Pay Amount</button>
+</div>
+
+<div id="sectorListWrap" class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Sector ID</th><th>Sector Name</th><th>Total Coin</th><th>Actions</th></tr>
+    </thead>
+    <tbody id="sectorListBody"></tbody>
+  </table>
+  <div class="pagination" id="sectorPagination"></div>
+</div>
+
+<div id="sectorDetailWrap" class="table-wrap" style="display:none;">
+  <button class="icon-btn back-btn" onclick="backToList()"><i class="fas fa-arrow-left"></i> Back</button>
+  <table>
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Username</th>
+        <th>Coin</th>
+        <th>Screenshot</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyB77ruQ-FxUvMAYHsUOipYB4lAQKaavCN0",
+  authDomain: "ludooclubofficial.firebaseapp.com",
+  databaseURL: "https://ludooclubofficial-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ludooclubofficial",
+  storageBucket: "ludooclubofficial.appspot.com",
+  messagingSenderId: "141984102700",
+  appId: "1:141984102700:web:37f719e81ae32df69ed489"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const sectorListBody = document.getElementById("sectorListBody");
+const sectorPagination = document.getElementById("sectorPagination");
+const sectorDetailWrap = document.getElementById("sectorDetailWrap");
+const sectorListWrap = document.getElementById("sectorListWrap");
+const tableBody = document.getElementById("tableBody");
+const amountInput = document.getElementById("amountInput");
+
+let sectorsArr = [], sectorsPerPage = 50, currentPage = 0, currentSectorId = "";
+
+// Toast message
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.innerText = msg;
+  t.classList.add("show");
+  setTimeout(()=>{ t.classList.remove("show") },2500);
+}
+
+function loadSectors(){
+  db.ref('users').once('value').then(usersSnap=>{
+    const users = usersSnap.val() || {};
+    const sectorsSet = new Map();
+
+    // Step 1: সব sectors বের করা
+    for(const uid in users){
+      const userSectors = users[uid].sectors || {};
+      for(const sectorId in userSectors){
+        const sec = userSectors[sectorId];
+        if(sec.name) sectorsSet.set(sectorId, {name: sec.name});
+      }
+    }
+
+    // Step 2: hidden sectors load
+    db.ref('hiddenSectors').once('value').then(hiddenSnap=>{
+      const hiddenData = hiddenSnap.val() || {};
+
+     // Filter sectors: লোড হবে যেগুলোর মধ্যে কিছু unpaid row আছে বা pending আছে
+sectorsArr = Array.from(sectorsSet.entries()).filter(([sectorId, secData])=>{
+  if(hiddenData[sectorId]) return false; // hidden skip
+
+  let shouldLoad = false; // default: লোড হবে না
+  for(const uid in users){
+    const sector = users[uid].sectors?.[sectorId];
+    if(!sector || !sector.rows) continue;
+
+    for(const rowKey in sector.rows){
+      const row = sector.rows[rowKey];
+      if(!row.paid || row.status==='pending'){
+        shouldLoad = true; // কমপক্ষে একটি unpaid/pending row আছে, লোড হবে
+        break;
+      }
+    }
+    if(shouldLoad) break;
+  }
+
+  return shouldLoad; // true হলে লোড হবে, false হলে skip
+});
+renderSectors();          // table render
+      populateSectorSelect();   // dropdown render
+      calculateTotalCoins();    // total coins update
+    });
+  });
+}
+
+// Populate select
+function populateSectorSelect(){
+  const sectorSelect = document.getElementById("sectorSelect");
+  sectorSelect.innerHTML = '<option value="">সেক্টর নির্বাচন করুন</option>';
+  sectorsArr.forEach(s=>{
+    const opt = document.createElement('option');
+    opt.value = s[0];
+    opt.textContent = s[1].name;
+    sectorSelect.appendChild(opt);
+  });
+}
+
+// Render sectors table
+function renderSectors(){
+  const start = currentPage*sectorsPerPage;
+  const end = start+sectorsPerPage;
+  const pageSectors = sectorsArr.slice(start,end);
+  sectorListBody.innerHTML="";
+  pageSectors.forEach(s=>{
+    const tr = document.createElement('tr');
+    tr.id = `sectorRow_${s[0]}`;
+    tr.innerHTML = `<td>${s[0]}</td><td>${s[1].name}</td><td id="totalCoin_${s[0]}">Loading...</td>
+      <td>
+        <button class="icon-btn" onclick="openSector('${s[0]}')"><i class="fas fa-eye"></i> Open</button>
+        <button class="icon-btn hide" onclick="toggleHide('${s[0]}')"><i class="fas fa-eye-slash"></i> Hide</button>
+      </td>`;
+    sectorListBody.appendChild(tr);
+  });
+  renderPagination();
+  updateSectorColors();
+  calculateTotalCoins();
+}
+
+// Pagination
+function renderPagination(){
+  const totalPages = Math.ceil(sectorsArr.length/sectorsPerPage);
+  currentPage = Math.min(currentPage, totalPages-1);
+  sectorPagination.innerHTML="";
+  for(let i=0;i<totalPages;i++){
+    const btn=document.createElement('button');
+    btn.textContent=i+1;
+    if(i===currentPage) btn.classList.add('disabled');
+    btn.onclick=()=>{ currentPage=i; renderSectors(); };
+    sectorPagination.appendChild(btn);
+  }
+}
+
+// Hide sector
+function toggleHide(sectorId){
+  db.ref('hiddenSectors/'+sectorId).set(true);
+  sectorsArr = sectorsArr.filter(s=>s[0]!==sectorId);
+  toast("Sector hidden");
+  renderSectors();
+  populateSectorSelect();
+}
+
+// Open sector
+function openSector(sectorId){
+  currentSectorId = sectorId;
+  sectorListWrap.style.display="none";
+  sectorDetailWrap.style.display="block";
+  loadRows();
+}
+
+// Back to list
+function backToList(){
+  currentSectorId = "";
+  sectorDetailWrap.style.display="none";
+  sectorListWrap.style.display="block";
+  currentPage = 0;
+  renderSectors();
+}
+
+// Load rows
+function loadRows(){
+  if(!currentSectorId) return tableBody.innerHTML="";
+  tableBody.innerHTML="";
+  db.ref('users').once('value').then(usersSnap=>{
+    usersSnap.forEach(userSnap=>{
+      const uid = userSnap.key;
+      const sector = userSnap.child('sectors/'+currentSectorId);
+      if(!sector.exists()) return;
+      sector.child('rows').forEach(r=>{
+        const d = r.val();
+        const tr = document.createElement('tr');
+        tr.className = d.status || 'pending';
+        tr.innerHTML = `<td>${uid}</td>
+          <td>${d.username||""}</td>
+          <td>${d.coin||0}</td>
+          <td>${d.screenshot?`<a href="${d.screenshot}" target="_blank">Link</a>`:""}</td>
+          <td>${d.status||"pending"}</td>
+          <td>
+            <button class="icon-btn approve" onclick="updateStatus('${uid}','${currentSectorId}','${r.key}','approved')"><i class="fas fa-check"></i> Approve</button>
+            <button class="icon-btn reject" onclick="updateStatus('${uid}','${currentSectorId}','${r.key}','rejected')"><i class="fas fa-times"></i> Reject</button>
+            <button class="icon-btn delete" onclick="deleteRow('${uid}','${currentSectorId}','${r.key}')"><i class="fas fa-trash"></i> Delete</button>
+          </td>`;
+        tableBody.appendChild(tr);
+      });
+    });
+    updateSectorColors();
+    calculateTotalCoins();
+  });
+}
+
+// Update row status
+function updateStatus(uid, sectorId, rowId, status){
+  db.ref(`users/${uid}/sectors/${sectorId}/rows/${rowId}`).update({status});
+  toast(`Status updated to ${status}`);
+  loadRows();
+}
+
+// Delete row
+function deleteRow(uid, sectorId, rowId){
+  if(!confirm("সারি মুছে ফেলবেন?")) return;
+  db.ref(`users/${uid}/sectors/${sectorId}/rows/${rowId}`).remove();
+  toast("Row deleted");
+  loadRows();
+}
+
+// Pay amount to approved rows in current sector and update MainBalance & TwitterBalance
+async function payAmount(){
+    const amt = parseFloat(amountInput.value);
+    const sectorId = document.getElementById("sectorSelect").value || currentSectorId;
+    if(!amt || !sectorId){ toast("Sector or Amount missing"); return; }
+
+    const usersSnap = await db.ref('users').once('value');
+    const users = usersSnap.val() || {};
+
+    for(const uid in users){
+        const user = users[uid];
+        const sector = user.sectors?.[sectorId];
+        if(!sector || !sector.rows) continue;
+
+        // শুধুমাত্র approved এবং unpaid row
+        const approvedUnpaidRows = Object.entries(sector.rows)
+            .filter(([rowKey, row]) => row.status==='approved' && !row.paid);
+
+        if(approvedUnpaidRows.length === 0) continue; // কোনো row না থাকলে skip
+
+        const totalAmt = amt * approvedUnpaidRows.length;
+
+        // Update balances once per user
+        await db.ref(`users/${uid}/MainBalance`).transaction(current => (current||0) + totalAmt);
+        await db.ref(`users/${uid}/TwitterBalance`).transaction(current => (current||0) + totalAmt);
+
+        // Paid flag একবারে update
+        const updates = {};
+        approvedUnpaidRows.forEach(([rowKey]) => {
+            updates[`users/${uid}/sectors/${sectorId}/rows/${rowKey}/paid`] = true;
+        });
+        await db.ref().update(updates);
+
+        toast(`Added ${totalAmt} to ${user.username || uid}'s balances`);
+    }
+
+    // Reset input & refresh
+    amountInput.value = "";
+    await loadRows(); // fresh load
+    updateSectorColors();
+    calculateTotalCoins();
+}
+// Update sector colors & paid/pending logic
+function updateSectorColors(){
+  db.ref('users').once('value').then(usersSnap=>{
+    const users = usersSnap.val() || {};
+    sectorsArr.forEach(s=>{
+      const sectorId = s[0];
+      let hasApproved=false, hasRejected=false, hasPending=false, allPaid=true;
+
+      for(const uid in users){
+        const user = users[uid];
+        const sector = user.sectors?.[sectorId];
+        if(!sector || !sector.rows) continue;
+
+        for(const rowKey in sector.rows){
+          const d = sector.rows[rowKey];
+          if(d.status==='approved') hasApproved=true;
+          else if(d.status==='rejected') hasRejected=true;
+          else hasPending=true;
+
+          if(!d.paid) allPaid=false;
+        }
+      }
+
+      const secRow = document.getElementById(`sectorRow_${sectorId}`);
+      if(secRow){
+        if(allPaid && (hasApproved || hasRejected)) secRow.style.background="#60a5fa"; // blue if paid
+        else if(hasApproved || hasRejected) secRow.style.background="#f87171"; // red if not fully paid
+        else if(hasPending) secRow.style.background="#fff8dc"; // yellow for pending
+        else secRow.style.background="#ffffff"; // default
+      }
+    });
+  });
+}
+
+// Calculate total coins for each sector
+function calculateTotalCoins(){
+  db.ref('users').once('value').then(usersSnap=>{
+    const users = usersSnap.val() || {};
+    sectorsArr.forEach(s=>{
+      const sectorId = s[0];
+      let totalCoin = 0;
+
+      for(const uid in users){
+        const user = users[uid];
+        const sector = user.sectors?.[sectorId];
+        if(!sector || !sector.rows) continue;
+
+        for(const rowKey in sector.rows){
+          const d = sector.rows[rowKey];
+          if(d.status==='approved') totalCoin += parseFloat(d.coin || 0); 
+          // rejected বা pending-কে skip কর
+        }
+      }
+
+      const td = document.getElementById(`totalCoin_${sectorId}`);
+      if(td) td.textContent = totalCoin;
+    });
+  });
+}
+// Initial load
+loadSectors();
+</script>
+<script>
+    document.addEventListener("click",()=>{const s=new Audio("./click.mp3");s.play()});
+</script>
+</body>
+</html>

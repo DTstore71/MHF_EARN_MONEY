@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Panel - grouped view</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="assets/css/styles2.css">
+</head>
+<body>
+ <header>
+ <img src="assets/images/logo.png" alt="Logo" class="header-logo">
+ MHF<span style="margin-left: 0;" class="span-all"> Admin</span> <button id="logoutBtn" style="
+    margin-left:auto;
+    padding:8px 15px;
+    border:none;
+    border-radius:37px;
+    background:black;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+  ">Logout</button>
+</header>
+
+
+<div id="authOverlay" style="
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.8);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:99999;
+  flex-direction:column;
+  color:#fff;
+  font-family:'Hind Siliguri', sans-serif;
+">
+  <h2>Admin Login Required</h2>
+  <input id="secretCode" type="text" placeholder="Secret Code" style="padding:10px;margin:5px;border-radius:10px;border:none;font-size:16px;">
+  <input id="purkaId" type="text" placeholder="Purka ID" style="padding:10px;margin:5px;border-radius:10px;border:none;font-size:16px;">
+  <button id="authLoginBtn" style="padding:10px 20px;margin-top:10px;border-radius:12px;border:none;background:#10b981;color:#fff;font-weight:bold;cursor:pointer;">Login</button>
+  <p id="authError" style="color:red;margin-top:10px;font-weight:bold;"></p>
+</div>
+
+<input type="text" id="searchInput" placeholder="🔍 Username লিখে সার্চ করুন..." style="
+  padding: 10px 15px;
+  width: 280px;
+  border: 4px solid #000;
+  border-radius: 37px;
+  margin: 15px auto;
+  display: block;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  color: #000;
+  outline: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  transition: 0.3s ease;
+">
+
+<div class="wrap" style="margin-top:25px;">
+  
+  <table>
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>User Name</th>
+        <th>Method</th>
+        <th>Account</th>
+        <th>Amount</th>
+        <th>Status</th>
+        <th>Time</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="withdrawTable"></tbody>
+  </table>
+</div>
+<script>
+    document.addEventListener("click",()=>{const s=new Audio("./click.mp3");s.play()});
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<script>
+// ======================= Firebase Config =======================
+const firebaseConfig = {
+  apiKey: "AIzaSyB77ruQ-FxUvMAYHsUOipYB4lAQKaavCN0",
+  authDomain: "ludooclubofficial.firebaseapp.com",
+  databaseURL: "https://ludooclubofficial-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ludooclubofficial",
+  storageBucket: "ludooclubofficial.firebasestorage.app",
+  messagingSenderId: "141984102700",
+  appId: "1:141984102700:web:37f719e81ae32df69ed489",
+  measurementId: "G-PHTVR2KP9E"
+};
+firebase.initializeApp(firebaseConfig);
+
+// ======================= DOM Elements =======================
+const withdrawTable = document.getElementById('withdrawTable');
+const overlay = document.getElementById('authOverlay');
+const loginBtn = document.getElementById('authLoginBtn');
+const secretInput = document.getElementById('secretCode');
+const purkaInput = document.getElementById('purkaId');
+const authError = document.getElementById('authError');
+const logoutBtn = document.getElementById('logoutBtn');
+
+// ======================= Admin Auth =======================
+const AUTH_SECRET = "TafsiyanTags654@$$$"; 
+const AUTH_PURKA = "No_Name_Tafsiyan"; 
+
+function checkAuth() {
+  const loggedIn = localStorage.getItem('isAdminLoggedIn') === 'true';
+  if(loggedIn){
+    overlay.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
+  } else {
+    overlay.style.display = 'flex';
+    logoutBtn.style.display = 'none';
+  }
+}
+
+loginBtn.onclick = () => {
+  const code = secretInput.value.trim();
+  const purka = purkaInput.value.trim();
+  if(code === AUTH_SECRET && purka === AUTH_PURKA) {
+    localStorage.setItem('isAdminLoggedIn','true');
+    checkAuth();
+  } else {
+    authError.textContent = 'Secret Code বা Purka ID ভুল!';
+  }
+};
+
+logoutBtn.onclick = () => {
+  localStorage.removeItem('isAdminLoggedIn');
+  checkAuth();
+};
+
+document.addEventListener('DOMContentLoaded', checkAuth);
+
+// ======================= Withdrawals =======================
+const withdrawRef = firebase.database().ref('withdrawals');
+let allWithdrawals = {}; // সব ডেটা স্টোর করার জন্য
+
+// লোড করার সময় ডেটা ধরে রাখি
+withdrawRef.on('value', snap => {
+  allWithdrawals = snap.val() || {};
+  renderWithdrawals(allWithdrawals);
+});
+
+async function renderWithdrawals(data){
+  withdrawTable.innerHTML='';
+  if(!data || Object.keys(data).length === 0) {
+    withdrawTable.innerHTML='<tr><td colspan="8">কোনো উইথড্র রিকোয়েস্ট নেই</td></tr>';
+    return;
+  }
+
+  const usersSnap = await firebase.database().ref('users').once('value');
+  const usersData = usersSnap.val() || {};
+
+  Object.entries(data).reverse().forEach(([id,w])=>{
+    if(w.hidden) return;
+
+    const username = usersData[w.uid]?.username || 'Unknown';
+    const tr = document.createElement('tr');
+
+    tr.innerHTML = `
+      <td>${w.uid||'N/A'}</td>
+      <td>${username}</td>
+      <td>${w.method||'-'}</td>
+      <td>${w.account||'-'}</td>
+      <td>${w.amount||0}</td>
+      <td style="font-weight:bold; color:${w.status==='approved'?'green':w.status==='rejected'?'red':'orange'}">${w.status||'pending'}</td>
+      <td>${w.time||'-'}</td>
+      <td>
+        <button class="btn" style="background:#10b981;color:white;" onclick="approveWithdraw('${id}')">Approve</button>
+        <button class="btn" style="background:#ef4444;color:white;" onclick="rejectWithdraw('${id}')">Reject</button>
+        <button class="btn" style="background:#6b7280;color:white;" onclick="hideWithdraw('${id}')">Hide</button>
+      </td>
+    `;
+    withdrawTable.appendChild(tr);
+  });
+}
+
+searchInput.addEventListener('keyup', async () => {
+  const query = searchInput.value.trim().toLowerCase();
+
+  const usersSnap = await firebase.database().ref('users').once('value');
+  const usersData = usersSnap.val() || {};
+
+  if(!query) return renderWithdrawals(allWithdrawals);
+
+  const filtered = {};
+  Object.entries(allWithdrawals).forEach(([id, w]) => {
+    if(w.hidden) return;
+    const username = usersData[w.uid]?.username || 'Unknown';
+    if(username.toLowerCase().includes(query)) {
+      filtered[id] = w;
+    }
+  });
+  renderWithdrawals(filtered);
+});
+
+// Approve Withdraw
+async function approveWithdraw(id){
+  if(!confirm("Approve করতে চান?")) return;
+  await withdrawRef.child(id).update({status:'approved'});
+  alert('Withdraw approved ✅');
+}
+
+// Reject Withdraw + Refund
+async function rejectWithdraw(id){
+  if(!confirm("Reject করতে চান এবং টাকা ফেরত দিতে চান?")) return;
+  const snap = await withdrawRef.child(id).once('value');
+  if(!snap.exists()) return;
+  const w = snap.val();
+  const userRef = firebase.database().ref('users/'+w.uid+'/MainBalance');
+  const userSnap = await userRef.once('value');
+  const current = userSnap.val() ?? 0;
+  await userRef.set(current + Number(w.amount || 0));
+  await withdrawRef.child(id).update({status:'rejected'});
+  alert('Withdraw rejected এবং টাকা ইউজারের ব্যালেন্সে ফেরত গেছে 🔁');
+}
+
+// Hide Withdraw (soft delete)
+async function hideWithdraw(id){
+  if(!confirm("এই withdraw এন্ট্রিটা এডমিন প্যানেল থেকে লুকাতে চান?")) return;
+  await withdrawRef.child(id).update({hidden:true});
+  alert('Withdraw এন্ট্রি হাইড হয়েছে 🕳️');
+}
+</script></body>
+</html>

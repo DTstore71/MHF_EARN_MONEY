@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Full Control</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+<style>
+body{
+  background:#020617;
+  font-family:system-ui;
+  color:#e5e7eb;
+  margin:0;
+  padding:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+}
+.container{
+  width:92%;
+  max-width:420px;
+  background:#020617;
+  border-radius:22px;
+  padding:20px;
+  box-shadow:0 0 25px rgba(56,189,248,.15);
+}
+h2{
+  font-size:18px;
+  font-weight:400;
+  text-align:center;
+  margin-bottom:18px;
+}
+label{
+  font-size:13px;
+  display:block;
+  margin:14px 0 6px;
+}
+input{
+  width:100%;
+  padding:12px;
+  border-radius:18px;
+  border:none;
+  outline:none;
+  background:#020617;
+  color:#e5e7eb;
+  box-shadow:inset 0 0 0 1px #1e293b;
+}
+input::placeholder{
+  color:#64748b;
+}
+button{
+  width:100%;
+  margin-top:12px;
+  padding:12px;
+  border:none;
+  border-radius:20px;
+  background:linear-gradient(135deg,#38bdf8,#6366f1);
+  color:#fff;
+  font-size:14px;
+  font-weight:400;
+  cursor:pointer;
+}
+button i{
+  margin-right:6px;
+}
+.toggle{
+  margin-top:16px;
+  background:#020617;
+  padding:12px;
+  border-radius:20px;
+  box-shadow:inset 0 0 0 1px #1e293b;
+}
+.toggle label{
+  margin:0;
+  font-size:13px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.toggle input{
+  width:auto;
+}
+.current{
+  margin-top:14px;
+  padding:12px;
+  border-radius:18px;
+  background:#020617;
+  text-align:center;
+  font-size:14px;
+  box-shadow:inset 0 0 0 1px #1e293b;
+}
+#status{
+  margin-top:12px;
+  font-size:13px;
+  text-align:center;
+  color:#38bdf8;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2><i class="fa-solid fa-shield-halved"></i> Admin Panel</h2>
+
+<label><i class="fa-solid fa-message"></i> মেসেজ লিখুন</label>
+<input type="text" id="adminMessageInput" placeholder="জিমেইল-এর কাজ চলমান আছে!">
+<input type="text" id="adminMessageNInput" placeholder="নতুন মেসেজ লিখুন">
+<input type="text" id="adminMessageIInput" placeholder="আরেকটি মেসেজ লিখুন">
+<button id="saveMessageBtn"><i class="fa-solid fa-floppy-disk"></i> Save Message</button>
+
+<div class="toggle">
+<label>
+<input type="checkbox" id="featureToggle">
+<i class="fa-solid fa-power-off"></i> Kill Switch মূল
+</label>
+<label>
+<input type="checkbox" id="killSwitchFToggle">
+<i class="fa-solid fa-power-off"></i> Kill Switch F
+</label>
+<label>
+<input type="checkbox" id="killSwitchNToggle">
+<i class="fa-solid fa-power-off"></i> Kill Switch N
+</label>
+</div>
+
+<label><i class="fa-solid fa-clock"></i> কাউন্টডাউন সময় (ঘন্টা)</label>
+<input type="number" id="hrs" placeholder="যেমন: 5">
+<button onclick="startCountdown()"><i class="fa-solid fa-hourglass-start"></i> Start / Reset</button>
+
+<div class="current" id="currentVal">Loading...</div>
+<div id="status"></div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyB77ruQ-FxUvMAYHsUOipYB4lAQKaavCN0",
+  authDomain: "ludooclubofficial.firebaseapp.com",
+  databaseURL: "https://ludooclubofficial-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ludooclubofficial",
+  storageBucket: "ludooclubofficial.firebasestorage.app",
+  messagingSenderId: "141984102700",
+  appId: "1:141984102700:web:37f719e81ae32df69ed489",
+  measurementId: "G-PHTVR2KP9E"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+
+// Elements
+const adminInput=document.getElementById("adminMessageInput");
+const adminInputN=document.getElementById("adminMessageNInput");
+const adminInputI=document.getElementById("adminMessageIInput");
+const saveBtn=document.getElementById("saveMessageBtn");
+
+const featureToggle=document.getElementById("featureToggle");
+const killSwitchF=document.getElementById("killSwitchFToggle");
+const killSwitchN=document.getElementById("killSwitchNToggle");
+
+const statusDiv=document.getElementById("status");
+const currentDiv=document.getElementById("currentVal");
+
+// Load messages
+db.ref("adminMessage").once("value").then(s=>{adminInput.value=s.val()?.text||""});
+db.ref("adminMessageN").once("value").then(s=>{adminInputN.value=s.val()?.text||""});
+db.ref("adminMessageI").once("value").then(s=>{adminInputI.value=s.val()?.text||""});
+
+// Load Kill Switches
+db.ref("settings/featureEnabled").once("value").then(s=>{featureToggle.checked=s.val()??true});
+db.ref("killSwitchF").once("value").then(s=>{killSwitchF.checked=s.val()?.active??false});
+db.ref("killSwitchN").once("value").then(s=>{killSwitchN.checked=s.val()?.active??false});
+
+// Countdown
+db.ref("settings/countdown").on("value",s=>{
+  const d=s.val();
+  if(!d){currentDiv.textContent="কোনো সময় সেট নেই";return;}
+  showRemaining(d.start_time,d.duration_hours);
+})
+
+// Save messages
+saveBtn.onclick=()=>{
+  const t=adminInput.value.trim();
+  const n=adminInputN.value.trim();
+  const i=adminInputI.value.trim();
+  if(!t && !n && !i) return alert("সব মেসেজ খালি হতে পারবে না");
+  db.ref("adminMessage").set({text:t});
+  db.ref("adminMessageN").set({text:n});
+  db.ref("adminMessageI").set({text:i});
+  statusDiv.textContent="মেসেজ আপডেট হয়েছে";
+}
+
+// Kill Switch toggles
+featureToggle.onchange=()=> {
+  db.ref("settings/featureEnabled").set(featureToggle.checked)
+    .then(()=>statusDiv.textContent="মূল Kill Switch আপডেট হয়েছে");
+}
+killSwitchF.onchange=()=> {
+  db.ref("killSwitchF").set({active:killSwitchF.checked})
+    .then(()=>statusDiv.textContent="Kill Switch F আপডেট হয়েছে");
+}
+killSwitchN.onchange=()=> {
+  db.ref("killSwitchN").set({active:killSwitchN.checked})
+    .then(()=>statusDiv.textContent="Kill Switch N আপডেট হয়েছে");
+}
+
+// Countdown timer functions
+let timer=null;
+function showRemaining(s,h){
+  if(timer) clearInterval(timer);
+  const e = s + h*3600000;
+  timer = setInterval(()=>{
+    const d = e - Date.now();
+    if(d <= 0){ clearInterval(timer); currentDiv.textContent="টাইম শেষ"; return; }
+    const x = Math.floor(d/1000);
+    const hh = String(Math.floor(x/3600)).padStart(2,"0");
+    const mm = String(Math.floor(x%3600/60)).padStart(2,"0");
+    const ss = String(x%60).padStart(2,"0");
+    currentDiv.textContent=`বাকি: ${hh}:${mm}:${ss}`;
+  },1000);
+}
+
+function startCountdown(){
+  const h=parseFloat(document.getElementById("hrs").value);
+  if(!h||h<=0) return alert("সঠিক ঘন্টা দাও");
+  db.ref("settings/countdown").set({start_time:Date.now(),duration_hours:h});
+}
+</script>
+<script>
+    document.addEventListener("click",()=>{const s=new Audio("./click.mp3");s.play()});
+</script>
+</body>
+</html>

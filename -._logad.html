@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOG AdMIN</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Hind Siliguri', 'Poppins', sans-serif;
+  font-weight: bold;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: url("assets/images/ponno.jpg") no-repeat center center fixed;
+    background-size: cover;
+}
+
+.container {
+  width: 400px;
+  background: #fff;
+  padding: 20px;
+  margin: 10px;
+  border: 0px solid black;
+  border-radius: 51px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 15px;
+  color: #333;
+  background: yellow;
+  padding: 3px;
+  margin-left: 25px;
+  margin-right: 25px;
+  border-radius: 48px;
+  border: 0px solid black;
+}
+
+.form-group {
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.form-group i.left-icon {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  color: #ff5e62;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 40px 10px 35px;
+  border-radius: 48px;
+  border: 0px solid black;
+  font-size: 14px;
+  background: wheat;
+}
+
+.form-group .toggle-eye {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #999;
+  padding: 5px;
+  font-size: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+button {
+  width: calc(100% - 120px);
+  margin: 8px 60px;
+  padding: 12px;
+  background: linear-gradient(135deg, #ff9966, #ff5e62);
+  border: none;
+  color: #fff;
+  border-radius: 38px;
+  border: 0px solid black;
+  cursor: pointer;
+  font-size: 15px;
+  transition: 0.3s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.overlay-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.popup-box {
+  background: #fff;
+  padding: 20px;
+  border-radius: 50px;
+  width: 400px;
+  max-width: 90%;
+  position: relative;
+  border: 0px solid black;
+}
+
+.popup-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 30px;
+  color: #333;
+  cursor: pointer;
+}
+
+.forgot-password-area .input-group input {
+  width: 100%;
+  padding: 10px 35px 10px 35px;
+  border-radius: 48px;
+  border: 0px solid black;
+  font-size: 14px;
+  background: wheat;
+  text-align: center;
+}
+
+.popup-button-group button.popup-save-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ff4757);
+  color: #fff;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div id="loginForm">
+  <h2><i class="fas fa-user"></i> User Login</h2>
+  <div class="form-group">
+    <i class="fa fa-user left-icon"></i>
+    <input type="text" placeholder="Username or Email" id="loginInput">
+  </div>
+  <div class="form-group">
+    <i class="fa fa-lock left-icon"></i>
+    <input type="password" id="loginPassword" placeholder="Password">
+    <i class="fa fa-eye toggle-eye" onclick="togglePassword(this,'loginPassword')"></i>
+  </div>
+  <p style="text-align:right;color:grey;text-decoration:underline;cursor:pointer;font-size:15px;" onclick="openForgotPasswordPopup()">Forgot Password?</p>
+  <button id="loginBtn"><i class="fas fa-lock-open"></i> Login</button>
+</div>
+
+<div class="overlay-popup" id="forgotPasswordPopup">
+  <div class="popup-box">
+    <span class="popup-close-btn" onclick="closeForgotPasswordPopup()">&times;</span>
+    <h3 style="border:0px solid black;border-radius:48px;padding:5px;margin:10px;margin-bottom:20px;text-align:center;background:yellow;">Forgot Password</h3>
+    <p style="border:0px solid black;background:wheat;padding:4px;border-radius:50px; padding: 15px;text-align:center;margin-bottom:15px;">আপনি আপনার লগইন কৃত মেইল নিচে বসিয়ে "Submit" করে দিন। পরে আপনার মেইলে রিসেট লিংক যাবে।</p>
+    <div class="forgot-password-area">
+      <div class="input-group">
+        <input type="email" id="forgotEmail" placeholder="✉️ Enter your email">
+      </div>
+      <div class="popup-button-group">
+        <button class="popup-save-btn" onclick="submitForgotPassword()"><i class="fas fa-paper-plane"></i> Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+    document.addEventListener("click",()=>{const s=new Audio("./click.mp3");s.play()});
+</script>
+<script>
+const AUTH_SECRET = "MHFTags654@$$$";
+const AUTH_PURKA = "No_Name_MHF";
+
+if(localStorage.getItem("admin_logged")==="true"){
+  window.location.href = "-_.iosbgb.html";
+}
+
+document.getElementById("loginBtn").onclick = () => {
+  const user = document.getElementById("loginInput").value.trim();
+  const pass = document.getElementById("loginPassword").value.trim();
+
+  if(user===AUTH_SECRET && pass===AUTH_PURKA){
+    localStorage.setItem("admin_logged","true");
+    localStorage.setItem("admin_email",user);
+    window.location.href = "-_.iosbgb.html";
+  } else {
+    alert("ভুল ইউজারনেম বা পাসওয়ার্ড");
+  }
+};
+
+function togglePassword(el,id){
+  const input=document.getElementById(id);
+  input.type=input.type==="password"?"text":"password";
+  el.classList.toggle("fa-eye");
+  el.classList.toggle("fa-eye-slash");
+}
+
+function openForgotPasswordPopup(){
+  document.getElementById("forgotPasswordPopup").style.display="flex";
+}
+
+function closeForgotPasswordPopup(){
+  document.getElementById("forgotPasswordPopup").style.display="none";
+}
+
+function submitForgotPassword(){
+  const mail=document.getElementById("forgotEmail").value.trim();
+  if(!mail){
+    alert("ইমেইল দিন");
+    return;
+  }
+  alert("রিসেট লিংক নট GRANTED");
+  closeForgotPasswordPopup();
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <title>High-Speed Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Hind+Siliguri:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #0a0f1c;
+            --bg-card: #161d31;
+            --border: #283046;
+            --text-main: #d0d2d6;
+            --accent: #7367f0;
+            --success: #28c76f;
+            --danger: #ea5455;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', 'Hind Siliguri', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            height: 60px;
+            background: var(--bg-card);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-text { font-weight: 700; font-size: 1.1rem; color: var(--accent); letter-spacing: 1px; }
+
+        /* Controls */
+        .toolbar {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #fff;
+            outline: none;
+            font-size: 15px;
+        }
+
+        #searchInput:focus { border-color: var(--accent); }
+
+        /* Table Responsive Wrapper - Fixed Scroll Issue */
+        .table-wrapper {
+            margin: 10px 20px 40px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow-x: auto; /* Horizontal Scroll */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px; /* Force scroll on mobile */
+        }
+
+        th {
+            background: #1f2945;
+            padding: 15px;
+            text-align: left;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #b4b7bd;
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 14px 15px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        tr:hover { background: rgba(115, 103, 240, 0.05); }
+
+        /* Badges & Buttons */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .bg-success { background: rgba(40, 199, 111, 0.12); color: var(--success); }
+        .bg-danger { background: rgba(234, 84, 85, 0.12); color: var(--danger); }
+
+        .btn {
+            padding: 7px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+
+        .btn-view { background: #4b4b4b; color: white; }
+        .btn-ban { background: var(--danger); color: white; }
+
+        /* Auth Overlay */
+        #authOverlay {
+            position: fixed; inset: 0; background: var(--bg-body);
+            z-index: 9999; display: flex; align-items: center; justify-content: center;
+        }
+        .login-card {
+            background: var(--bg-card); padding: 30px; border-radius: 12px;
+            width: 90%; max-width: 350px; border: 1px solid var(--border);
+        }
+        .login-card input {
+            width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px;
+            border: 1px solid var(--border); background: #0a0f1c; color: white;
+        }
+
+        /* Status Loader */
+        #loader {
+            text-align: center; padding: 10px; color: var(--accent); display: none;
+            font-weight: bold; font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-text">GMTP <span style="color:#fff">ADMIN</span></div>
+    <button id="logoutBtn" class="btn btn-ban" style="display:none">LOGOUT</button>
+</header>
+
+<div id="authOverlay">
+    <div class="login-card">
+        <h3 style="margin-top:0; color:var(--accent)">Admin Access</h3>
+        <input id="secretCode" type="password" placeholder="Secret Code">
+        <input id="purkaId" type="text" placeholder="Purka ID">
+        <button onclick="attemptLogin()" class="btn" style="width:100%; background:var(--accent); color:white; padding:12px">Enter System</button>
+        <p id="errorMsg" style="color:var(--danger); font-size:12px; text-align:center"></p>
+    </div>
+</div>
+
+<div class="toolbar">
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Username লিখে এন্টার দিন..." onkeypress="handleSearch(event)">
+        <i class="fas fa-search" style="position:absolute; right:15px; top:13px; color:#676d7d"></i>
+    </div>
+    <div id="loader">Processing...</div>
+</div>
+
+<div class="table-wrapper">
+    <table id="adminTable">
+        <thead>
+            <tr>
+                <th>UID</th>
+                <th>User Detail</th>
+                <th>Tw Balance</th>
+                <th>Main Balance</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyB77ruQ-FxUvMAYHsUOipYB4lAQKaavCN0",
+  authDomain: "ludooclubofficial.firebaseapp.com",
+  databaseURL: "https://ludooclubofficial-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ludooclubofficial",
+  storageBucket: "ludooclubofficial.firebasestorage.app",
+  messagingSenderId: "141984102700",
+  appId: "1:141984102700:web:37f719e81ae32df69ed489",
+  measurementId: "G-PHTVR2KP9E"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Fast Auth Logic
+    function attemptLogin() {
+        const secret = document.getElementById('secretCode').value;
+        const purka = document.getElementById('purkaId').value;
+        if(secret === "TafsiyanTags654@$$$" && purka === "No_Name_Tafsiyan") {
+            localStorage.setItem('adminAuth', 'true');
+            location.reload();
+        } else {
+            document.getElementById('errorMsg').innerText = "ভুল তথ্য!";
+        }
+    }
+
+    if(localStorage.getItem('adminAuth') === 'true') {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'block';
+        loadTopUsers();
+    }
+
+    document.getElementById('logoutBtn').onclick = () => {
+        localStorage.removeItem('adminAuth');
+        location.reload();
+    };
+
+    // Load Top 20 Users by TwitterBalance (Performance Focused)
+    function loadTopUsers() {
+        toggleLoader(true);
+        db.ref('users').orderByChild('TwitterBalance').limitToLast(20).once('value', snapshot => {
+            const list = [];
+            snapshot.forEach(child => {
+                list.unshift({id: child.key, ...child.val()});
+            });
+            renderData(list);
+            toggleLoader(false);
+        });
+    }
+
+    // High Speed Search (Server-side Indexing)
+    function handleSearch(e) {
+        if(e.key === 'Enter') {
+            const query = e.target.value.trim();
+            if(!query) return loadTopUsers();
+            
+            toggleLoader(true);
+            db.ref('users').orderByChild('username').startAt(query).endAt(query + "\uf8ff").limitToFirst(30).once('value', snapshot => {
+                const results = [];
+                snapshot.forEach(child => {
+                    results.push({id: child.key, ...child.val()});
+                });
+                renderData(results);
+                toggleLoader(false);
+            });
+        }
+    }
+
+    function renderData(users) {
+        const body = document.getElementById('tableBody');
+        body.innerHTML = '';
+        users.forEach(u => {
+            const row = `
+                <tr>
+                    <td style="font-family:monospace; font-size:11px">${u.id.substring(0,8)}...</td>
+                    <td>
+                        <div style="font-weight:600">${u.username || 'No Name'}</div>
+                        <div style="font-size:11px; color:#676d7d">${u.email || '-'}</div>
+                    </td>
+                    <td style="color:var(--accent); font-weight:700">${u.TwitterBalance || 0}</td>
+                    <td>${u.MainBalance || 0} TK</td>
+                    <td>${u.phone || '-'}</td>
+                    <td>
+                        <span class="badge ${u.banned ? 'bg-danger' : 'bg-success'}">
+                            ${u.banned ? 'BANNED' : 'ACTIVE'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-view" onclick="viewUser('${u.id}')">VIEW</button>
+                        <button class="btn btn-ban" onclick="toggleBan('${u.id}', ${u.banned})">${u.banned ? 'UNBAN' : 'BAN'}</button>
+                    </td>
+                </tr>
+            `;
+            body.innerHTML += row;
+        });
+    }
+
+    function toggleLoader(show) {
+        document.getElementById('loader').style.display = show ? 'block' : 'none';
+    }
+
+    async function toggleBan(id, status) {
+        if(confirm('ইউজার স্ট্যাটাস পরিবর্তন করতে চান?')) {
+            await db.ref(`users/${id}/banned`).set(!status);
+            loadTopUsers();
+        }
+    }
+
+    function viewUser(id) {
+        db.ref(`users/${id}`).once('value', s => alert(JSON.stringify(s.val(), null, 2)));
+    }
+</script>
+<script>
+    document.addEventListener("click",()=>{const s=new Audio("./click.mp3");s.play()});
+</script>
+</body>
+</html>

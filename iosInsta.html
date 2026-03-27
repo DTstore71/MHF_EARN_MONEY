@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MHF Admin - Advanced Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --gold: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        body { 
+            font-family: 'Hind Siliguri', sans-serif; 
+            background: var(--dark-bg); 
+            margin: 0; color: var(--text-main);
+        }
+        header {
+            background: var(--card-bg);
+            padding: 15px 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .logo-area { font-size: 20px; font-weight: 700; color: var(--primary); }
+        .logo-area span { color: var(--gold); }
+        
+        .container { max-width: 1400px; margin: 20px auto; padding: 0 15px; }
+        
+        /* Stats Section */
+        .stats-grid { 
+            display: grid; grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; margin-bottom: 20px; 
+        }
+        @media (min-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        .stat-card { 
+            background: var(--card-bg); padding: 15px; border-radius: 12px; 
+            border-bottom: 4px solid var(--primary); text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .stat-card h3 { font-size: 24px; margin: 5px 0; color: #fff; }
+        .stat-card p { font-size: 13px; margin: 0; color: #94a3b8; font-weight: 600; }
+
+        /* Chart Area */
+        .chart-container {
+            background: var(--card-bg); padding: 25px; border-radius: 16px;
+            margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .table-wrap {
+            background: var(--card-bg); border-radius: 12px;
+            overflow-x: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { background: rgba(255,255,255,0.05); padding: 15px; text-align: left; color: #94a3b8; font-size: 13px; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 14px; }
+     .btn {
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.btn:active {
+    transform: scale(0.95);
+}
+
+.btn-view { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+.btn-success { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+.btn-delete { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+.btn-export-all { background: linear-gradient(135deg, #f59e0b, #d97706); color: black; }
+
+.btn:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+        /* Popup */
+        #popup {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); 
+            display: none; justify-content: center; align-items: center; z-index: 1000; padding: 10px;
+            backdrop-filter: blur(5px);
+        }
+        .popup-content { 
+            background: var(--card-bg); width: 100%; max-width: 900px; padding: 25px; 
+            border-radius: 20px; max-height: 90vh; display: flex; flex-direction: column; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .popup-scroll { overflow-y: auto; flex-grow: 1; margin-top: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .pop-table { width: 100%; border-collapse: collapse; }
+        .pop-table th { position: sticky; top: 0; background: #334155; color: #fff; z-index: 1; }
+        .pop-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        #authOverlay {
+            position: fixed; inset: 0; background: var(--dark-bg); z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-card { background: var(--card-bg); padding: 30px; border-radius: 15px; width: 300px; text-align: center; }
+        .login-card input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+        
+        /* New Color Logic Classes */
+        .row-green { background: rgba(16, 185, 129, 0.2) !important; }
+        .row-red { background: rgba(239, 68, 68, 0.2) !important; }
+
+    </style>
+</head>
+<body>
+
+<div id="authOverlay">
+    <div class="login-card">
+        <h2 style="color: var(--primary)">MHF Admin</h2>
+        <input id="secretCode" type="password" placeholder="Secret Code">
+        <input id="purkaId" type="text" placeholder="Admin ID">
+        <button onclick="handleLogin()" class="btn btn-view" style="width: 100%; padding: 12px; font-size: 14px;">Verify Identity</button>
+        <p id="authError" style="color:var(--danger); margin-top: 12px; font-size: 13px;"></p>
+    </div>
+</div>
+
+<header>
+    <div class="logo-area">MHF <span>CONTROL</span> ~ Instagram</div>
+    <button id="logoutBtn" class="btn btn-delete"><i class="fas fa-sign-out-alt"></i> Logout</button>
+</header>
+
+<div class="container">
+    <div class="chart-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <p style="margin: 0; color: var(--primary); font-weight: 700; font-size: 18px;"><i class="fas fa-chart-line"></i> Submissions Activity</p>
+            <button class="btn btn-export-all" onclick="exportAllData()"><i class="fas fa-file-excel"></i> ALL EXPORT</button>
+            <button style="margin-left: 10px;"class="btn btn-view" onclick="setGlobalRate()">৳ SET RATE</button>
+        </div>
+        <canvas id="submissionChart" height="80"></canvas>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card" style="border-color: var(--gold)"><h3 id="totalPending">0</h3><p>Pending</p></div>
+        <div class="stat-card" style="border-color: var(--primary)"><h3 id="totalApproved">0</h3><p>Approved</p></div>
+        <div class="stat-card" style="border-color: var(--danger)"><h3 id="expectedPay">0৳</h3><p>Unpaid</p></div>
+        <div class="stat-card" style="border-color: var(--success)"><h3 id="totalPaid">0৳</h3><p>Total Paid</p></div>
+        
+    </div>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+    <input type="text" oninput="handleSearch(this.value)" placeholder="Search Name or UID..." style="flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white;">
+    <button class="btn btn-view" onclick="sendCustomMessage()"><i class="fas fa-envelope"></i> SEND MSG</button>
+</div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Sector Name</th>
+                    <th>Rate</th>
+                    <th>Approved</th>
+                    <th>Unpaid</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="adminTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="popup">
+    <div class="popup-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #334155;">
+            <h3 id="popupTitle" style="margin:0; color: var(--gold);"><i class="fas fa-list"></i> Sector Details</h3>
+            <button class="btn btn-delete" onclick="closePopup()" style="padding: 5px 12px;">Close</button>
+        </div>
+        <div class="popup-scroll">
+            <table class="pop-table">
+                <thead>
+                    <tr>
+                        <th>UID</th>
+                        <th>Password</th>
+                        <th>2FA Code</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="popupBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+const firebaseConfig = { 
+    apiKey: "AIzaSyB77ruQ-FxUvMAYHsUOipYB4lAQKaavCN0", 
+    authDomain: "ludooclubofficial.firebaseapp.com", 
+    databaseURL: "https://ludooclubofficial-default-rtdb.asia-southeast1.firebasedatabase.app", 
+    projectId: "ludooclubofficial", 
+    storageBucket: "ludooclubofficial.firebasestorage.app", 
+    messagingSenderId: "141984102700", 
+    appId: "1:141984102700:web:37f719e81ae32df69ed489" 
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let usersData = {};
+let groupedData = {};
+let myChart;
+let searchTerm = "";
+let exportedKeys = new Set(JSON.parse(localStorage.getItem("mhf_exported_keys") || "[]"));
+const DEFAULT_RATE = parseFloat(localStorage.getItem("mhf_global_rate") || "10");
+
+function handleLogin() {
+    const code = document.getElementById("secretCode").value;
+    const id = document.getElementById("purkaId").value;
+    if(code==="MHF_SYSTEM@$@$" && id==="MHF_SYSTEM@$@$"){
+        localStorage.setItem("adminAuth","true");
+        location.reload();
+    } else {
+        document.getElementById("authError").innerHTML = `<i class="fas fa-exclamation-triangle"></i> Invalid Access Code!`;
+    }
+}
+
+if(localStorage.getItem("adminAuth")==="true"){
+    document.getElementById("authOverlay").style.display="none";
+    initChart();
+    listenUsers();
+}
+
+function listenUsers(){
+    db.ref("users").on('value', snap => {
+        usersData = snap.val() || {};
+        processGroupedData();
+        renderMain();
+        updateChart();
+    });
+}
+
+function processGroupedData(){
+    groupedData = {};
+    Object.entries(usersData).forEach(([uid, u])=>{
+        if(u.projects){
+            Object.entries(u.projects).forEach(([pid, p])=>{
+                const entries = p.entries ? Object.entries(p.entries).map(([eid, e])=>({eid, ...e})) : [];
+                if(entries.length > 0){
+                    const key = `${uid}_${pid}`;
+                    const lastTime = Math.max(...entries.map(e => e.time || 0));
+                    const finalRate = (p.rate && p.rate > 0) ? p.rate : DEFAULT_RATE;
+                    groupedData[key] = { uid, pid, username: u.username || "Unknown", sector: p.name, rate: finalRate, entries, lastTime };
+                }
+            });
+        }
+    });
+}
+
+function handleSearch(val) {
+    searchTerm = val.toLowerCase();
+    renderMain();
+}
+
+async function sendAutoMessage(uid, sectorName, count) {
+    const msgId = Date.now();
+    await db.ref(`users/${uid}/inbox/${msgId}`).set({
+        text: `ভাই আপনার ${sectorName} সেক্টরের ${count} টি ইনস্টাগ্রাম এডমিন রিসিভ করেছে।`,
+        time: msgId,
+        type: "info"
+    });
+}
+
+async function sendCustomMessage() {
+    const uid = prompt("ইউজার আইডি (UID) দিন:");
+    if(!uid) return;
+    const msg = prompt("আপনার মেসেজটি লিখুন:");
+    if(!msg) return;
+    const msgId = Date.now();
+    await db.ref(`users/${uid}/inbox/${msgId}`).set({
+        text: msg,
+        time: msgId,
+        type: "warning"
+    });
+    alert("মেসেজ পাঠানো হয়েছে!");
+}
+
+function renderMain() {
+    const tbody = document.getElementById("adminTable");
+    const frag = document.createDocumentFragment();
+    let totalPending = 0, totalApproved = 0, expectedPay = 0, totalPaidGlobal = 0;
+
+    const filteredGroups = Object.values(groupedData)
+        // সার্চ ফিল্টার
+        .filter(g => g.username.toLowerCase().includes(searchTerm) || g.uid.toLowerCase().includes(searchTerm))
+        // পেন্ডিং নেই এবং পেইড আছে → হাইড
+        .filter(g => {
+            const pendingCount = g.entries.filter(e => e.state === 'pending').length;
+            const paidCount = g.entries.filter(e => e.paid || e.state === 'paid').length;
+            return !(pendingCount === 0 && paidCount > 0);
+        });
+
+    // সর্বশেষ সময় অনুযায়ী sort
+    filteredGroups.sort((a, b) => b.lastTime - a.lastTime).forEach(g => {
+        const key = `${g.uid}_${g.pid}`;
+        const entries = g.entries;
+        const pendingCount = entries.filter(e => e.state === 'pending').length;
+        const approvedCount = entries.filter(e => e.state === 'approved' || e.state === 'paid').length;
+        const rejectedCount = entries.filter(e => e.state === 'rejected').length;
+        const unpaidApproved = entries.filter(e => e.state === 'approved' && !e.paid);
+        const paidEntries = entries.filter(e => e.paid || e.state === 'paid');
+        const totalPaidInThisGroup = paidEntries.reduce((sum, e) => sum + (e.paidAmount || g.rate), 0);
+
+        totalPending += pendingCount;
+        totalApproved += approvedCount;
+        expectedPay += unpaidApproved.length * g.rate;
+        totalPaidGlobal += totalPaidInThisGroup;
+
+        const tr = document.createElement("tr");
+        if (approvedCount > 0 || rejectedCount > 0) tr.className = "row-green"; 
+        else if (exportedKeys.has(key)) tr.className = "row-red"; 
+
+        tr.innerHTML = `
+            <td><i class="fas fa-user-circle"></i> <b>${g.username}</b><br><small style="color:#94a3b8">${g.uid}</small></td>
+            <td style="color:var(--gold)"><i class="fas fa-folder-open"></i> ${g.sector}</td>
+            <td>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <input type="number" value="${g.rate}" id="rateInput_${key}" style="width:55px; background:#0f172a; color:white; border:1px solid #334155; border-radius:4px; padding:2px 5px;">
+                    <button class="btn btn-view" onclick="updateSingleRate('${g.uid}', '${g.pid}', 'rateInput_${key}')" style="padding:4px 8px;"><i class="fas fa-save"></i></button>
+                </div>
+            </td>
+            <td style="color:var(--success)"><i class="fas fa-check-double"></i> ${approvedCount}</td>
+            <td style="color:var(--danger)"><i class="fas fa-clock"></i> ${unpaidApproved.length}</td>
+            <td><span style="color: var(--primary)"><i class="fas fa-money-bill-wave"></i> ${unpaidApproved.length * g.rate}৳</span></td>
+            <td>
+                <div style="display:flex; gap:5px;">
+                    <button class="btn btn-view" onclick="openDetails('${key}')" title="View Items"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-success" onclick="bulkUpdate('${key}', 'approved')" title="Approve All Pending"><i class="fas fa-check-circle"></i></button>
+                    <button class="btn btn-delete" onclick="bulkUpdate('${key}', 'rejected')" title="Reject All Pending"><i class="fas fa-times-circle"></i></button>
+                    <button class="btn btn-success" onclick="payGroup('${key}')" title="Pay Now"><i class="fas fa-wallet"></i></button>
+                </div>
+            </td>
+        `;
+        frag.appendChild(tr);
+    });
+
+    requestAnimationFrame(() => {
+        tbody.innerHTML = "";
+        tbody.appendChild(frag);
+        document.getElementById("totalPending").innerText = totalPending;
+        document.getElementById("totalApproved").innerText = totalApproved;
+        document.getElementById("expectedPay").innerText = expectedPay + "৳";
+        document.getElementById("totalPaid").innerText = totalPaidGlobal + "৳";
+    });
+}
+
+async function bulkUpdate(key, newState) {
+    const group = groupedData[key];
+    const pendingEntries = group.entries.filter(e => e.state === 'pending');
+    if (pendingEntries.length === 0) return alert("কোন পেন্ডিং এন্ট্রি নেই!");
+    if (!confirm(`এই গ্রুপের ${pendingEntries.length} টি পেন্ডিং এন্ট্রি কি ${newState === 'approved' ? 'এপ্রুভ' : 'রিজেক্ট'} করবেন?`)) return;
+    const updates = {};
+    pendingEntries.forEach(e => {
+        updates[`users/${group.uid}/projects/${group.pid}/entries/${e.eid}/state`] = newState;
+        updates[`users/${group.uid}/projects/${group.pid}/entries/${e.eid}/paid`] = false;
+    });
+    exportedKeys.delete(key);
+    localStorage.setItem("mhf_exported_keys", JSON.stringify(Array.from(exportedKeys)));
+    await db.ref().update(updates);
+}
+
+async function updateSingleRate(uid, pid, inputId) {
+    const newRate = document.getElementById(inputId).value;
+    if (newRate !== "" && !isNaN(newRate)) {
+        await db.ref(`users/${uid}/projects/${pid}`).update({ rate: parseFloat(newRate) });
+        alert("Rate Updated!");
+    }
+}
+
+async function setGlobalRate() {
+    const newRate = prompt("সবার জন্য একটি নির্দিষ্ট রেট দিন:");
+    if (!newRate || isNaN(newRate)) return;
+    localStorage.setItem("mhf_global_rate", newRate);
+    const updates = {};
+    Object.values(groupedData).forEach(g => {
+        updates[`users/${g.uid}/projects/${g.pid}/rate`] = parseFloat(newRate);
+    });
+    await db.ref().update(updates);
+    alert("Global Rate Applied!");
+}
+
+async function payGroup(key){
+    const group = groupedData[key];
+    const unpaid = group.entries.filter(e => e.state==='approved' && !e.paid);
+    if(unpaid.length === 0) return alert("পে করার মতো কিছু নেই!");
+    if(!confirm(`Total: ${unpaid.length * group.rate}৳ পে করবেন?`)) return;
+    const amount = unpaid.length * group.rate;
+    const updates = {};
+    unpaid.forEach(e => {
+        updates[`users/${group.uid}/projects/${group.pid}/entries/${e.eid}/paid`] = true;
+        updates[`users/${group.uid}/projects/${group.pid}/entries/${e.eid}/state`] = 'paid';
+        updates[`users/${group.uid}/projects/${group.pid}/entries/${e.eid}/paidAmount`] = group.rate;
+    });
+    updates[`users/${group.uid}/MainBalance`] = (usersData[group.uid]?.MainBalance || 0) + amount;
+    updates[`users/${group.uid}/TwitterBalance`] = (usersData[group.uid]?.TwitterBalance || 0) + amount;
+    await db.ref().update(updates);
+    alert("Payment Successful!");
+}
+
+function exportAllData() {
+    let exportList = [];
+    let notifyMap = {};
+    Object.values(groupedData).forEach(g => {
+        const key = `${g.uid}_${g.pid}`;
+        const hasAction = g.entries.some(e => e.state === 'approved' || e.state === 'rejected' || e.state === 'paid');
+        if (!hasAction && !exportedKeys.has(key)) {
+            exportedKeys.add(key);
+            if(!notifyMap[g.uid]) notifyMap[g.uid] = [];
+            notifyMap[g.uid].push({sector: g.sector, count: g.entries.length});
+            g.entries.forEach(e => {
+                exportList.push({ "Worker": g.username, "Sector": g.sector, "UID": e.username || '', "Pass": e.password || '', "2FA": e.twoFA || '' });
+            });
+        }
+    });
+    if(exportList.length === 0) return alert("নতুন কোনো ডাটা নেই!");
+    localStorage.setItem("mhf_exported_keys", JSON.stringify(Array.from(exportedKeys)));
+    const ws = XLSX.utils.json_to_sheet(exportList);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Data");
+    XLSX.writeFile(wb, `MHF_Export_${Date.now()}.xlsx`);
+    Object.entries(notifyMap).forEach(([uid, sectors]) => {
+        sectors.forEach(s => sendAutoMessage(uid, s.sector, s.count));
+    });
+    renderMain();
+}
+
+function initChart() {
+    const ctx = document.getElementById('submissionChart').getContext('2d');
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Activity', data: [], borderColor: '#3b82f6', fill: true, tension: 0.4 }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+}
+
+function updateChart(){
+    const counts = {};
+    Object.values(groupedData).forEach(g => {
+        g.entries.forEach(e => {
+            const d = e.time ? new Date(e.time).toLocaleDateString() : 'N/A';
+            counts[d] = (counts[d] || 0) + 1;
+        });
+    });
+    myChart.data.labels = Object.keys(counts);
+    myChart.data.datasets[0].data = Object.values(counts);
+    myChart.update();
+}
+
+function openDetails(key){
+    const group = groupedData[key];
+    document.getElementById("popupTitle").innerHTML = `<i class="fas fa-users-cog"></i> ${group.username} - ${group.sector}`;
+    const body = document.getElementById("popupBody");
+    body.innerHTML = group.entries.map(e => `
+        <tr>
+            <td><i class="fas fa-at"></i> ${e.username}</td>
+            <td><i class="fas fa-key"></i> ${e.password}</td>
+            <td style="color:gold"><i class="fas fa-shield-alt"></i> ${e.twoFA}</td>
+            <td><b>${e.state.toUpperCase()}</b></td>
+            <td>
+                <button class="btn btn-success" onclick="updateStatus('${group.uid}','${group.pid}','${e.eid}','approved')"><i class="fas fa-check"></i></button>
+                <button class="btn btn-delete" onclick="updateStatus('${group.uid}','${group.pid}','${e.eid}','rejected')"><i class="fas fa-times"></i></button>
+                <button class="btn btn-delete" onclick="deleteEntry('${group.uid}','${group.pid}','${e.eid}')"><i class="fas fa-trash-alt"></i></button>
+            </td>
+        </tr>
+    `).join('');
+    document.getElementById("popup").style.display = "flex";
+}
+
+async function updateStatus(uid, pid, eid, state){
+    await db.ref(`users/${uid}/projects/${pid}/entries/${eid}`).update({ state, paid: false });
+    exportedKeys.delete(`${uid}_${pid}`);
+    localStorage.setItem("mhf_exported_keys", JSON.stringify(Array.from(exportedKeys)));
+    openDetails(`${uid}_${pid}`);
+}
+
+async function deleteEntry(uid, pid, eid) {
+    if(confirm("চিরতরে ডিলিট করতে চান?")) {
+        await db.ref(`users/${uid}/projects/${pid}/entries/${eid}`).remove();
+        openDetails(`${uid}_${pid}`);
+    }
+}
+
+function closePopup(){ document.getElementById("popup").style.display = "none"; }
+document.getElementById("logoutBtn").onclick = () => { localStorage.clear(); location.reload(); };</script>
+<script>
+    document.addEventListener("click",()=>{const s=new Audio("./click.mp3");s.play()});
+</script>
+</body>
+</html>
+
+

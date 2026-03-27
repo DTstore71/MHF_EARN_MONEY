@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MHF Ultra Admin - Fast & Fluid</title>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --primary: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text: #f8fafc;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Hind Siliguri', sans-serif; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            background-image: radial-gradient(circle at top right, #1e1b4b, transparent), radial-gradient(circle at bottom left, #1e1b4b, transparent);
+            background-attachment: fixed;
+        }
+
+        header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            padding: 20px 5%;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-card h3 { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px; }
+        .stat-card p { font-size: 1.8rem; font-weight: 700; color: var(--success); }
+
+        .toolbar {
+            padding: 0 5% 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            padding: 12px 20px;
+            border-radius: 15px;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+            min-width: 250px;
+        }
+
+        input:focus { border-color: var(--primary); background: rgba(255,255,255,0.1); }
+
+        .btn {
+            padding: 12px 25px;
+            border-radius: 15px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+            color: white;
+        }
+
+        .btn-p { background: var(--primary); }
+        .btn-s { background: var(--success); }
+        .btn-d { background: var(--danger); }
+        .btn:active { transform: scale(0.95); }
+
+        .table-container {
+            margin: 0 5% 20px;
+            background: var(--card-bg);
+            border-radius: 25px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { background: rgba(255,255,255,0.05); padding: 18px; text-align: left; font-size: 0.85rem; color: #94a3b8; }
+        td { padding: 16px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+
+        .row-item:hover { background: rgba(255,255,255,0.03); }
+        .status-pill { padding: 4px 12px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
+
+        #pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            flex-wrap: wrap;
+        }
+
+        .page-node {
+            width: 40px; height: 40px; border-radius: 12px;
+            background: var(--card-bg); border: 1px solid var(--border);
+            color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+
+        .page-node.active { background: var(--primary); border-color: var(--primary); }
+
+        #modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(15px); display: none;
+            justify-content: center; align-items: center; z-index: 2000;
+            padding: 20px;
+        }
+
+        .modal-box {
+            background: #1e293b; width: 100%; max-width: 1000px;
+            max-height: 90vh; border-radius: 30px; padding: 30px;
+            position: relative; overflow-y: auto; border: 1px solid var(--border);
+        }
+
+        #auth {
+            position: fixed; inset: 0; background: var(--bg);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 5000; gap: 20px;
+        }
+
+        .loading-bar {
+            position: fixed; top: 0; left: 0; height: 3px; background: var(--primary);
+            width: 0; transition: 0.3s; z-index: 6000;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar { flex-direction: column; align-items: stretch; }
+            input { width: 100%; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loading" class="loading-bar"></div>
+
+<div id="auth">
+    <h1 style="letter-spacing: 2px;">SECURE ACCESS</h1>
+    <input type="password" id="access_key" placeholder="Enter Secret Code" style="text-align: center;">
+    <button onclick="verify()" class="btn btn-p">Unlock System</button>
+</div>
+
+<header>
+    <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; background:var(--primary); border-radius:12px; display:grid; place-items:center;">
+            <i class="fas fa-shield-halved"></i>
+        </div>
+        <h2 style="font-size: 1.2rem;">MHF <span style="color:var(--primary)">ULTRA</span></h2>
+    </div>
+    <button onclick="exit()" class="btn btn-d" style="padding: 8px 15px;">Exit</button>
+</header>
+
+<div class="stats-grid">
+    <div class="stat-card"><h3>Users</h3><p id="stat_u">0</p></div>
+    <div class="stat-card"><h3>Emails</h3><p id="stat_e">0</p></div>
+    <div class="stat-card"><h3>Approved</h3><p id="stat_a" style="color:var(--success)">0</p></div>
+    <div class="stat-card"><h3>Pending Pay</h3><p id="stat_p" style="color:var(--danger)">0</p></div>
+</div>
+
+<div class="toolbar">
+    <input type="text" id="finder" placeholder="Search by Username..." oninput="refresh()">
+    <button onclick="bulkExport()" class="btn btn-p"><i class="fas fa-file-export"></i> Export New</button>
+    <button onclick="globalRate()" class="btn btn-s"><i class="fas fa-coins"></i> Set Global Rate</button>
+</div>
+
+<div class="table-container">
+    <div style="overflow-x: auto;">
+        <table id="main_table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Sector</th>
+                    <th>Count</th>
+                    <th>Status</th>
+                    <th>Rate</th>
+                    <th>Expected</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="master_body"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="pagination"></div>
+
+<div id="modal">
+    <div class="modal-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 id="m_title">Data Inspection</h3>
+            <button onclick="closeModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <table id="sub_table">
+            <thead>
+                <tr>
+                    <th>Gmail</th>
+                    <th>Password</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="modal_body"></tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
+<script>
+
+const config = {
+  apiKey: "AIzaSyB77ruQ-FxUvMAYHsUOipYB4lAQKaavCN0",
+  authDomain: "ludooclubofficial.firebaseapp.com",
+  databaseURL: "https://ludooclubofficial-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ludooclubofficial",
+  storageBucket: "ludooclubofficial.firebasestorage.app",
+  messagingSenderId: "141984102700",
+  appId: "1:141984102700:web:37f719e81ae32df69ed489",
+  measurementId: "G-PHTVR2KP9E"
+};
+
+firebase.initializeApp(config);
+const db = firebase.database();
+
+let raw={}, users={}, page=1;
+const limit=50;
+
+function verify(){
+    const k=document.getElementById('access_key').value;
+    if(k==="MHF_SYSTEM@$@$"){
+        document.getElementById('auth').style.display='none';
+        localStorage.setItem('mhf_session','active');
+        sync();
+    }
+}
+
+function exit(){
+    localStorage.removeItem('mhf_session');
+    location.reload();
+}
+
+window.onload=()=>{
+    if(localStorage.getItem('mhf_session')){
+        document.getElementById('auth').style.display='none';
+        sync();
+    }
+}
+
+function sync(){
+    showLoad(30);
+    db.ref('users').on('value',s=>{
+        users=s.val()||{};
+        document.getElementById('stat_u').innerText=Object.keys(users).length;
+        refresh();
+    });
+    db.ref('admin_messages').on('value',s=>{
+        raw=s.val()||{};
+        calcStats();
+        refresh();
+        showLoad(100);
+    });
+}
+
+function showLoad(w){
+    document.getElementById('loading').style.width=w+'%';
+}
+
+function calcStats(){
+    let e=0,a=0,p=0;
+    Object.values(raw).forEach(x=>{
+        if(!x.hidden){
+            e++;
+            if(x.color==='green') a++;
+            if(x.color==='green'&&!x.paid) p+=(x.basePrice||18);
+        }
+    });
+    document.getElementById('stat_e').innerText=e;
+    document.getElementById('stat_a').innerText=a;
+    document.getElementById('stat_p').innerText='৳'+p;
+}
+
+function refresh(){
+    const query=document.getElementById('finder').value.toLowerCase();
+    const groups={};
+
+    Object.entries(raw).forEach(([id,val])=>{
+        if(val.hidden) return;
+        const key=`${val.userId}_${val.sector}`;
+        if(!groups[key]) groups[key]={uid:val.userId,sec:val.sector,list:[],rate:val.basePrice||18};
+        groups[key].list.push({id,...val});
+    });
+
+    let dataRows=Object.values(groups).filter(g=>{
+        const name=users[g.uid]?.username||"Unknown";
+        return name.toLowerCase().includes(query);
+    });
+
+    dataRows=dataRows.filter(g=>{
+        const pending=g.list.some(x=>!x.color);
+        const unpaid=g.list.some(x=>x.color==='green'&&!x.paid);
+        return pending||unpaid;
+    });
+
+    dataRows.sort((a,b)=>b.list[0].timestamp-a.list[0].timestamp);
+
+    const total=Math.ceil(dataRows.length/limit);
+    const paged=dataRows.slice((page-1)*limit,page*limit);
+
+    const body=document.getElementById('master_body');
+    body.innerHTML='';
+
+    paged.forEach(g=>{
+        const name=users[g.uid]?.username||"Unknown";
+
+        const approved=g.list.filter(x=>x.color==='green').length;
+        const rejected=g.list.filter(x=>x.color==='red').length;
+        const pending=g.list.filter(x=>!x.color).length;
+        const exported=g.list.filter(x=>x.exported).length;
+
+        let bg;
+        if(exported===g.list.length) bg='rgba(209,213,219,0.3)';
+        else if(approved===g.list.length) bg='rgba(16,185,129,0.1)';
+        else if(rejected===g.list.length) bg='rgba(239,68,68,0.1)';
+        else if(pending===g.list.length) bg='transparent';
+        else bg='rgba(147,51,234,0.1)';
+
+        const unpaid=g.list.filter(x=>x.color==='green'&&!x.paid).length;
+
+        const tr=document.createElement('tr');
+        tr.className='row-item';
+        tr.style.background=bg;
+
+tr.innerHTML=`
+<td><b>${name}</b></td>
+<td><span class="status-pill" style="background:rgba(255,255,255,0.1)">${g.sec}</span></td>
+<td>${g.list.length}</td>
+<td>
+<span class="status-pill btn-s">${approved} Approved</span>
+<span class="status-pill btn-d">${rejected} Rejected</span>
+${pending>0?`<span class="status-pill" style="background:rgba(255,255,255,0.1)">${pending} Pending</span>`:''}
+</td>
+
+<td onclick="editRate(this,'${g.uid}','${g.sec}',${g.rate})" style="cursor:pointer">৳${g.rate}</td>
+
+<td style="color:var(--danger); font-weight:700">৳${unpaid*g.rate}</td>
+
+<td>
+<div style="display:flex; gap:8px; flex-wrap:wrap;">
+<button onclick="inspect('${g.uid}','${g.sec}')" class="btn btn-p" style="padding:6px 12px; font-size:12px;">View</button>
+<button onclick="settle('${g.uid}','${g.sec}')" class="btn btn-s" style="padding:6px 12px; font-size:12px;">Pay</button>
+${pending>0?`
+<button onclick="markAll('${g.uid}','${g.sec}','green')" class="btn btn-s" style="padding:6px 12px; font-size:12px;">A.</button>
+<button onclick="markAll('${g.uid}','${g.sec}','red')" class="btn btn-d" style="padding:6px 12px; font-size:12px;">R.</button>
+`:''}
+</div>
+</td>
+`;
+
+        body.appendChild(tr);
+    });
+
+    renderPages(total);
+}
+
+function editRate(el,uid,sec,val){
+    el.innerHTML=`<input type="number" value="${val}" style="width:60px;padding:4px;font-size:12px" onblur="saveRate(this,'${uid}','${sec}')">`;
+    el.querySelector('input').focus();
+}
+
+async function saveRate(inp,uid,sec){
+    const v=parseInt(inp.value)||0;
+    const updates={};
+    Object.entries(raw).forEach(([id,x])=>{
+        if(x.userId===uid&&x.sector===sec){
+            updates[`admin_messages/${id}/basePrice`]=v;
+        }
+    });
+    await db.ref().update(updates);
+}
+
+async function markAll(uid,sec,color){
+    const items=Object.entries(raw).filter(([id,v])=>v.userId===uid&&v.sector===sec&&!v.hidden&&!v.color);
+    if(!items.length) return alert("No pending items!");
+    const updates={};
+    items.forEach(([id])=>updates[`admin_messages/${id}/color`]=color);
+    await db.ref().update(updates);
+}
+
+function renderPages(total){
+    const nav=document.getElementById('pagination');
+    nav.innerHTML='';
+    if(total<=1) return;
+    for(let i=1;i<=total;i++){
+        const n=document.createElement('div');
+        n.className=`page-node ${i===page?'active':''}`;
+        n.innerText=i;
+        n.onclick=()=>{page=i;refresh();window.scrollTo(0,0);};
+        nav.appendChild(n);
+    }
+}
+
+function inspect(uid,sec){
+    const items=Object.entries(raw).filter(([k,v])=>v.userId===uid&&v.sector===sec&&!v.hidden);
+    const b=document.getElementById('modal_body');
+    b.innerHTML='';
+    items.forEach(([id,v])=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+<td>${(v.row&&v.row[0])||''}</td>
+<td>${(v.row&&v.row[1])||''}</td>
+<td><span class="status-pill" style="background:${v.color==='green'?'var(--success)':v.color==='red'?'var(--danger)':'rgba(255,255,255,0.1)'}">${v.color||'Pending'}</span></td>
+<td>
+<button onclick="mark('${id}','green')" class="btn btn-s" style="padding:4px 8px;"><i class="fas fa-check"></i></button>
+<button onclick="mark('${id}','red')" class="btn btn-d" style="padding:4px 8px;"><i class="fas fa-times"></i></button>
+</td>`;
+        b.appendChild(tr);
+    });
+    document.getElementById('modal').style.display='flex';
+}
+
+function mark(id,c){
+    showLoad(50);
+    db.ref(`admin_messages/${id}`).update({color:c,paid:false}).then(()=>showLoad(100));
+}
+
+async function settle(uid,sec){
+    const target=Object.entries(raw).filter(([k,v])=>v.userId===uid&&v.sector===sec&&v.color==='green'&&!v.paid);
+    if(!target.length) return alert("Nothing to pay!");
+    const amount=target.length*(target[0][1].basePrice||18);
+    const uSnap=await db.ref(`users/${uid}`).once('value');
+    const bal=(uSnap.val()?.MainBalance||0)+amount;
+    const up={};
+    target.forEach(([id])=>up[`admin_messages/${id}/paid`]=true);
+    up[`users/${uid}/MainBalance`]=bal;
+    up[`users/${uid}/TwitterBalance`]=(uSnap.val()?.TwitterBalance||0)+amount;
+    await db.ref().update(up);
+    alert(`৳${amount} Added to user balance!`);
+}
+
+// --- Bulk Export (Safe + Status) ---
+function bulkExport(){
+    const data = Object.entries(raw)
+        .filter(([id,v])=> !v.exported && !v.hidden)
+        .map(([id,v]) => ({
+            Gmail:(v.row && v.row[0])||'',
+            Pass:(v.row && v.row[1])||'',
+            Sector:v.sector||'',
+            Status:v.color||'Pending'
+        }));
+
+    if(!data.length) return alert("No new data!");
+
+    const sheet = XLSX.utils.json_to_sheet(data);
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, "MHF_Data");
+    XLSX.writeFile(book, `MHF_Export_${Date.now()}.xlsx`);
+
+    const up = {};
+    Object.entries(raw).forEach(([id,v])=>{
+        if(!v.exported) up[`admin_messages/${id}/exported`] = true;
+    });
+    db.ref().update(up);
+}
+
+// --- Global Rate ---
+async function globalRate(){
+    const r = prompt("Enter New Global Rate (৳):");
+    if(!r || isNaN(r)) return;
+    showLoad(20);
+    const up = {};
+    Object.keys(raw).forEach(id => { if(!raw[id].hidden) up[`admin_messages/${id}/basePrice`] = parseFloat(r); });
+    await db.ref().update(up);
+    showLoad(100);
+    alert("Global Rate Updated!");
+}
+
+// --- Close Modal ---
+function closeModal(){ document.getElementById('modal').style.display='none'; }
+</script>
+<script>
+    document.addEventListener("click",()=>{const s=new Audio("./click.mp3");s.play()});
+</script>
+</body>
+</html>

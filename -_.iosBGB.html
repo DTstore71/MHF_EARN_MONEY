@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MHF_OFFICIAL</title>
+
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="assets/images/logo.png">
+<link rel="icon" type="image/png" href="assets/images/logo.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+    width: 100%;
+    height: 100%;
+    font-family: 'Poppins', 'Hind Siliguri', sans-serif;
+    background: url("assets/images/ponno.jpg") no-repeat center center fixed;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 25px;
+    margin: 15px;
+    
+    padding: 25px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 47px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    backdrop-filter: blur(8px);
+    z-index: 1;
+    max-height: 90%;
+    overflow-y: auto;
+}
+
+.card {
+    flex: 1 1 160px;
+    max-width: 180px;
+    background: linear-gradient(145deg, #ffffff, #e6f0ff);
+    border-radius: 37px;
+    text-align: center;
+    padding: 30px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 70%);
+    transform: scale(0);
+    transition: transform 0.5s;
+    pointer-events: none;
+}
+
+.card:hover::before {
+    transform: scale(1);
+}
+
+.card:hover {
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+    background: linear-gradient(145deg, #cce0ff, #e6f0ff);
+}
+
+.card i {
+    font-size: 40px;
+    color: #4a90e2;
+    margin-bottom: 12px;
+    transition: transform 0.3s, color 0.3s;
+}
+
+.card:hover i {
+    transform: rotate(15deg) scale(1.2);
+    color: #2f6fc1;
+}
+
+.card span {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    display: block;
+    margin-top: 5px;
+}
+
+
+.iframe-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.98);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.iframe-wrapper iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+
+.close-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 65px;
+    height: 65px;
+    background: #ffffffcc;
+    border-radius: 50%;
+    font-size: 45px;
+    color: #333;
+    border: 4px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 10000;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    transition: transform 0.2s, background 0.2s;
+}
+
+.close-btn:hover {
+    transform: scale(1.15);
+    background: #ffffff;
+    color: #ff4b5c;
+}
+
+@media (max-width: 600px) {
+    .card { flex: 1 1 45%; max-width: 100%; padding: 25px 15px; }
+    .card i { font-size: 32px; }
+    .card span { font-size: 14px; }
+    .close-btn { width: 55px; height: 55px; font-size: 38px; }
+}
+
+@media (min-width: 900px) {
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+html, body {
+    width: 100%;
+    height: 100%;
+    font-family: 'Poppins', 'Hind Siliguri', sans-serif;
+    background: url("assets/images/ponno.jpg") no-repeat center center fixed;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+.sidebar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 30px;
+    padding: 40px;
+    margin: 20px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 40px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    backdrop-filter: blur(8px);
+    overflow-y: auto;
+    max-height: 90%;
+}
+.card {
+    background: linear-gradient(145deg, #ffffff, #e6f0ff);
+    border-radius: 37px;
+    text-align: center;
+    padding: 30px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+.card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 70%);
+    transform: scale(0);
+    transition: transform 0.5s;
+    pointer-events: none;
+}
+.card:hover::before {
+    transform: scale(1);
+}
+.card:hover {
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+    background: linear-gradient(145deg, #cce0ff, #e6f0ff);
+}
+.card i {
+    font-size: 40px;
+    color: #4a90e2;
+    margin-bottom: 12px;
+    transition: transform 0.3s, color 0.3s;
+}
+.card:hover i {
+    transform: rotate(15deg) scale(1.2);
+    color: #2f6fc1;
+}
+.card span {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    display: block;
+    margin-top: 5px;
+}
+.iframe-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.98);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+.iframe-wrapper iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+.close-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 65px;
+    height: 65px;
+    background: #ffffffcc;
+    border-radius: 50%;
+    font-size: 45px;
+    color: #333;
+    border: 4px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 10000;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    transition: transform 0.2s, background 0.2s;
+}
+.close-btn:hover {
+    transform: scale(1.15);
+    background: #ffffff;
+    color: #ff4b5c;
+}
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+    <header style="background:red;color:white; font-weight:bold;padding:15px;border-radius:37px;border-left:5px solid black;border-right:5px solid black;text-align:center;font-size:22px;">
+        <i class="fas fa-user-secret"></i> MHF Earn Money Official — AdminPanel
+    </header>
+
+<div class="card" data-link="-_.ioswith.html">
+    <i class="fas fa-wallet"></i>
+    <span>Withdrawal</span>
+</div>
+
+<div class="card" data-link="-_.ioscoin.html">
+    <i class="fas fa-coins"></i>
+    <span>Coins</span>
+</div>
+
+<div class="card" data-link="iosInsta.html">
+    <i class="fab fa-instagram"></i>
+    <span>Instagram</span>
+</div>
+
+<div class="card" data-link="রফ.html">
+    <i class="fas fa-envelope"></i>
+    <span>Gmails</span>
+</div>
+    <div class="card" data-link="https://gmailcheck.com">
+    <i class="fas fa-star"></i>
+    <span>Gmail Checker</span>
+    </div>
+    
+<div class="card" data-link="-_.iosGM.html">
+    <i class="fas fa-bullhorn"></i>
+    <span>Announcement & Timer Set</span>
+</div>
+
+
+<div class="card" data-link="iosuser.html">
+    <i class="fas fa-users"></i>
+    <span>Users Dashboard</span>
+    </div>   
+       
+<div id="header" class="header">
+  <h2>Admin</h2>
+  <div class="header-right">
+    <p id="currentUser">লগইন ইউজার: ...</p>
+    <button id="logoutBtn">লগআউট</button>
+  </div>
+</div>
+
+<style>
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    border-radius: 24px;
+    
+    margin-top: 10px;
+    max-Width: 300px;
+    background: #2c3e50;
+    color: #ecf0f1;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  .header h2 {
+    margin: 0;
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  #currentUser {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  #logoutBtn {
+    padding: 7px 16px;
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    border-radius: 28px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+    font-weight: bold;
+  }
+
+  #logoutBtn:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 500px) {
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .header-right {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+</style>
+</div>
+
+<div class="iframe-wrapper" id="iframeWrapper">
+    <iframe id="contentFrame"></iframe>
+    <div class="close-btn" id="closeBtn">&times;</div>
+</div>
+
+<script>
+const AUTH_EMAIL = "";
+const AUTH_PASS  = "";
+
+const userLabel = document.getElementById('currentUser');
+const logoutBtn = document.getElementById('logoutBtn');
+
+function checkLogin(){
+  const isLogged = localStorage.getItem("admin_logged") === "true";
+  const email = localStorage.getItem("admin_email");
+
+  if(!isLogged || !email){
+    window.location.href = "-._LogAd.html";
+    return;
+  }
+  userLabel.textContent = `লগইন ইউজার: ${email}`;
+}
+
+logoutBtn.addEventListener("click", () => {
+  localStorage.removeItem("admin_logged");
+  localStorage.removeItem("admin_email");
+  window.location.href = "-._LogAd.html";
+});
+
+checkLogin();
+
+const cards = document.querySelectorAll('.card');
+const iframeWrapper = document.getElementById('iframeWrapper');
+const iframe = document.getElementById('contentFrame');
+const closeBtn = document.getElementById('closeBtn');
+
+cards.forEach(card => {
+  card.addEventListener('click', () => {
+    iframe.src = card.dataset.link;
+    iframeWrapper.style.display = 'flex';
+  });
+});
+
+closeBtn.addEventListener('click', () => {
+  iframe.src = '';
+  iframeWrapper.style.display = 'none';
+});
+</script>
+
+
+<script>
+    document.addEventListener("click",()=>{const s=new Audio("./click.mp3");s.play()});
+</script>
+
+</body>
+</html>

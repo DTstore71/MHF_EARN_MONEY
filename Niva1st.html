@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MHF Earn Money — Selling Post</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Hind Siliguri', sans-serif;
+}
+
+body {
+  background: white;
+  background-size: cover;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+  font-weight: bold;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1400px;
+  
+  
+  
+  padding: 30px;
+  
+}
+
+.lvl-bronze {
+  background: linear-gradient(145deg, #8c4a19, #cd7f32, #ffb56b);
+  color: #fff;
+  box-shadow: inset 0 1px 3px rgba(255,255,255,.3),
+              0 6px 15px rgba(205,127,50,.6);
+  border: 1px solid #a65e2e;
+}
+
+.lvl-silver {
+  background: linear-gradient(145deg, #9ea7ad, #e0e0e0, #b0bec5);
+  color: #111;
+  box-shadow: inset 0 1px 4px rgba(255,255,255,.8),
+              0 6px 15px rgba(160,170,180,.6);
+  border: 1px solid #9ea7ad;
+}
+
+.lvl-gold {
+  background: linear-gradient(
+    145deg,
+    #7a5c00,
+    #b8860b,
+    #ffd700,
+    #ffcc33,
+    #ffb300,
+    #9c6b00
+  );
+  color: #1a1200;
+  box-shadow:
+    inset 0 2px 6px rgba(255,255,255,.7),
+    inset 0 -2px 6px rgba(0,0,0,.3),
+    0 10px 25px rgba(255,193,7,.9);
+  border: 2px solid #e6b800;
+  text-shadow: 0 1px 1px rgba(255,255,255,.6);
+}
+
+.lvl-diamond {
+  background: linear-gradient(
+    135deg,
+    #f5fdff,
+    #9ff0ff,
+    #00e5ff,
+    #4facfe,
+    #8b7bff,
+    #eafcff
+  );
+  color: black;
+
+  box-shadow:
+    inset 0 1px 4px rgba(255,255,255,.95),
+    inset 0 -1px 3px rgba(0,120,255,.25),
+    0 0 18px rgba(0,229,255,.85),
+    0 0 30px rgba(124,77,255,.7);
+
+  border: 1.5px solid rgba(255,255,255,.85);
+
+  text-shadow:
+    0 0 2px rgba(255,255,255,.9),
+    0 0 4px rgba(180,240,255,.6);
+}
+
+  #userLevel {
+    padding: 10px 14px;
+    border: none;
+    text-align: center;
+    transition: all .3s ease;
+  }
+
+h1 {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+  background: red;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 5px solid black;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding: 15px;
+  background: gold;
+  border-radius: 8px;
+  
+}
+
+.toolbar::-webkit-scrollbar {
+  height: 5px;
+  
+}
+
+.toolbar::-webkit-scrollbar-thumb {
+  background: #2563eb;
+  
+}
+
+.toolbar::-webkit-scrollbar-track {
+  background: #ddd;
+  
+}
+
+.toolbar .btn,
+.toolbar select,
+.toolbar input,
+.toolbar label.btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  min-width: 100px;
+  max-width: 180px;
+  height: 56px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  white-space: normal;
+word-wrap: break-word;
+overflow-wrap: break-word;
+  box-sizing: border-box;
+  border: 0px solid black;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toolbar .btn i,
+.toolbar label.btn i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+}
+
+.btn.primary:hover {
+  transform: translateY(-2px);
+}
+
+.btn.red {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+}
+
+.btn.red:hover {
+  transform: translateY(-2px);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  
+  padding: 18px;
+  margin-bottom: 5px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+thead th {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  padding: 10px;
+  border: 2px solid black;
+}
+
+tbody td {
+  padding: 8px;
+  border: 2px solid black;
+  min-width: 150px;
+}
+
+tbody tr:hover {
+  background: rgba(37, 99, 235, 0.1);
+  transform: scale(1.002);
+}
+
+[contenteditable]:focus {
+  background: rgba(37, 99, 235, 0.05);
+  outline: none;
+  border-radius: 6px;
+}
+
+.icon-btn {
+  padding: 4px 8px;
+  border: 3px solid black;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+.icon-btn:hover {
+  background: #2563eb;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+#rowCount {
+  text-align: right;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+#sendBtn {
+  float: right;
+  margin-bottom: 10px;
+}
+</style>
+</head>
+<body>
+<style>
+  
+</style>
+
+<div class="wrap"> <h1 style="font-size: 23px; border-radius: none; border: none;" id=""><i class="fas fa-envelope-open"></i> MHF Earn Money — Coin Selling Section</h1>
+
+<div id="colorStats">
+  <p id="greenCount"><i class="fas fa-check-circle"></i>Approve: 0</p>
+  <p id="redCount"><i class="fas fa-times-circle"></i>Reject: 0</p>
+ 
+</div>
+
+<style>
+#colorStats {
+  display: flex;
+  flex-wrap: wrap;           /* অতিরিক্ত বক্স হলে নিচের লাইনে যাবে */
+  gap: 10px;                 /* বক্সের মধ্যে ফাঁকা */
+  justify-content: flex-start; /* ডিফল্টভাবে বাম দিকে বসবে */
+  
+}
+
+#colorStats p {
+  display: flex;
+  flex-direction: column;    /* আইকনকে টেক্সটের উপরে রাখার জন্য */
+  align-items: center;
+  background: #ccc;
+  justify-content: center;
+  padding: 18px 8px;          /* padding কমানো */
+/* border: 3px solid brown; */
+
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;           /* লেখা ছোট করা */
+  
+  line-height: 1.2;          /* compact height */
+  min-width: calc(50% - 10px); /* প্রতি লাইনে দুইটি বক্স ফিট করানোর জন্য */
+  box-sizing: border-box;
+  gap: 4px;                  /* আইকন ও টেক্সটের মধ্যে ফাঁকা কমানো */
+  cursor: default;
+  transition: transform 0.2s;
+  text-align: center;
+  margin-bottom: 20px;       /* নিচের gap সামান্য কমানো */
+}
+
+#colorStats p:last-child {
+  /* যদি লাইনের একমাত্র বক্স হয় (এক্সট্রা), সেটা মাঝখানে হবে */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#greenCount {
+  border-color: #28a745;
+  color: #28a745;
+}
+
+#redCount {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+#levelCount {
+  border-color: #ffc107;
+  color: #ffc107;
+}
+
+#colorStats p:hover {
+  transform: scale(1.05);
+}
+
+#colorStats i {
+  font-size: 20px; 
+}
+</style>
+
+<div id="adminMessageContainer"></div>
+
+
+
+
+<style>
+    #publicMessages{
+  margin-bottom:20px;
+  background:#000;
+  border-left: 4px solid black;
+  border-right: 4px solid black;
+  border-bottom: 4px solid black;
+  border-top: 4px solid black;
+  border-radius: 37px;
+  overflow:hidden;
+}
+
+#publicMessages .msg{
+  padding:14px 10px;
+  font-size:15px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  letter-spacing:0.4px;
+}
+
+#publicMessages .blue{
+  background:#eaf2ff;
+  color:#0f3cff;
+}
+
+#publicMessages .green{
+  background:#ecfdf3;
+  color:#047857;
+  border-top:3px solid #000;
+}
+
+#publicMessages i{
+  font-size:18px;
+}
+</style>
+  
+  <div class="toolbar">
+    <select id="sectorSelect"><option value="">সেক্টর নির্বাচন করুন</option></select>
+    <button class="btn primary" id="addSector"><i class="fas fa-plus"></i> নতুন সেক্টর</button>
+    <button class="btn primary" id="addRow"><i class="fas fa-plus"></i> নতুন সারি</button>
+    
+
+    <button class="btn primary" id="sendBtn"><i class="fas fa-paper-plane"></i> Send</button>
+  
+
+
+
+<script>
+    
+</script>
+
+<style>
+.inbox-modal {
+  display: none;
+  position: fixed;
+  z-index: 99999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+}
+
+.inbox-modal h3 {
+ background: aqua;
+ border-left: 4px solid black;
+ border-right: 4px solid black;
+ border-radius: 37px;
+ margin-left: 30px;
+ margin-right: 30px;
+ padding: 10px;
+ font-size: 21px;
+}
+
+
+
+.inbox-modal-content {
+  background: #fff;    
+  padding: 20px;    
+  font-weight: bold;
+  border: 0px solid black;    
+  border-radius: 38px;    
+  width: 90%;    
+  max-width: 400px;    
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);    
+  animation: popUp 0.4s ease;    
+  text-align: center;    
+  margin-left: 20px;    
+  margin-right: 20px;
+}
+
+.inbox-close {
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.inbox-close:hover {
+  color: red;
+}
+
+.inbox-message {
+  border: 3px solid black;
+  border-radius: 38px;
+  padding: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inbox-message p {
+  margin-top: 15px;    
+  font-family: 'Hind Siliguri', sans-serif;    
+  font-size: 18px;    
+  color: #222;    
+  letter-spacing: 1px;    
+}
+
+.inbox-message button {
+  background: red;
+  color: #fff;
+  border: 5px solid black;
+  padding: 4px 8px;
+  border-radius: 37px;
+  cursor: pointer;
+}
+
+.inbox-message button:hover {
+  background: #c00;
+}
+
+
+</style>
+
+<style>
+  #toast {
+    position: fixed;
+  bottom: 40px;
+  left: 50%;
+  font-weight: bold;
+  transform: translateX(-50%) translateY(20px);
+  background: black;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 27px;
+  font-family: "Hind Siliguri", sans-serif;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  opacity: 0;
+  transition: all 0.5s ease;
+  z-index: 9999;
+  }
+
+  #toast.show {
+    opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  }
+</style>
+
+<div id="toast"></div>
+
+
+
+    <button class="btn red" id="deleteSector"><i class="fas fa-trash"></i> সেক্টর মুছুন</button>
+  </div>
+
+
+  <div class="table-wrap">
+    <table id="spreadsheet">
+      <thead><tr id="tableHeader"><th>Sender Username</th><th>Total Coin</th><th>Screenshot</th><th>Actions</th></tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div id="rowCount">সারি: 0</div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<style>
+  #toast {
+    position: fixed;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    opacity: 0;
+    transition: 0.4s;
+    z-index: 9999;
+  }
+</style>
+
+<div id="toast"></div>
+
+<script>
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.style.opacity = 1;
+
+    setTimeout(() => {
+      t.style.opacity = 0;
+    }, 2500);
+  }
+</script>
+
+
+<div id="joinModal" style="
+  display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,.7); justify-content:center; align-items:center; z-index:99999;
+">
+  <div style="background:white;padding:25px;border-radius:16px;text-align:center;width:90%;max-width:350px;">
+    <h2 style="margin-bottom:10px;">
+     প্রথমে Telegram চ্যানেলে Join করুন</h2>
+    <p style="margin-bottom:15px;">Join না দিলে আপনি জিমেইল এর কাজ করতে পারবে না!</p>
+
+    <a id="joinNowBtn" href="https://t.me/MHFEarnMoney" target="_blank">
+      <button style="background:#2563eb;color:white;padding:12px 20px;border-radius:8px;border:none;font-size:18px;width:100%;">
+         Join Channel
+      </button>
+    </a>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyB77ruQ-FxUvMAYHsUOipYB4lAQKaavCN0",
+  authDomain: "ludooclubofficial.firebaseapp.com",
+  databaseURL: "https://ludooclubofficial-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ludooclubofficial",
+  storageBucket: "ludooclubofficial.firebasestorage.app",
+  messagingSenderId: "141984102700",
+  appId: "1:141984102700:web:37f719e81ae32df69ed489"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+let currentUserId = null;
+let currentSector = "";
+const sectorSelect = document.getElementById("sectorSelect");
+const tableBody = document.getElementById("tableBody");
+const rowCount = document.getElementById("rowCount");
+const greenCount = document.getElementById("greenCount");
+const redCount = document.getElementById("redCount");
+let toastTimer = null;
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.innerText = msg;
+  t.classList.add("show");
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{
+    t.classList.remove("show");
+  },2500);
+}
+
+auth.onAuthStateChanged(user=>{
+  if(!user){ location.href = "UserLogin.html"; return; }
+  currentUserId = user.uid;
+  loadSectors();
+
+  // 💡 পেজ লোডের সময়ও লোডRows কল করা হচ্ছে
+  setTimeout(() => {  // একটু ডিলে দিলে sectors আগে লোড হবে
+    loadRows();
+  }, 500);
+});
+function loadSectors(){
+  db.ref(`users/${currentUserId}/sectors`).on("value", snap=>{
+    const prev = currentSector;
+    sectorSelect.innerHTML = `<option value="">সেক্টর নির্বাচন করুন</option>`;
+    snap.forEach(s=>{
+      const d = s.val();
+      if(d.name && d.name.trim() !== ""){
+        const o = document.createElement("option");
+        o.value = s.key;
+        o.textContent = d.name + (d.status==="pending"?" (Added)":"");
+        sectorSelect.appendChild(o);
+      }
+    });
+    if(prev && [...sectorSelect.options].some(opt=>opt.value===prev)) sectorSelect.value = prev;
+  });
+}
+
+document.getElementById("addSector").onclick = async ()=>{
+  const name = prompt("নতুন সেক্টর নাম");
+  if(!name || name.trim().length < 2) return;
+  const dup = await db.ref(`users/${currentUserId}/sectors`).orderByChild("name").equalTo(name).once("value");
+  if(dup.exists()) return toast("এই নামের সেক্টর আগে থেকেই আছে");
+  const ref = db.ref(`users/${currentUserId}/sectors`).push({name,status:"draft",time:Date.now()});
+  currentSector = ref.key;
+  sectorSelect.value = currentSector;
+  loadRows();
+  toast("নতুন সেক্টর তৈরি হয়েছে");
+};
+
+document.getElementById("deleteSector").onclick = ()=>{
+  if(!currentSector) return toast("সেক্টর নির্বাচন করুন");
+  db.ref(`users/${currentUserId}/sectors/${currentSector}`).once("value", snap=>{
+    if(snap.val().status==="pending") return toast("Pending সেক্টর মুছা যাবে না");
+    if(confirm("সেক্টর মুছবেন?")){
+      db.ref(`users/${currentUserId}/sectors/${currentSector}`).remove();
+      tableBody.innerHTML="";
+      currentSector="";
+    }
+  });
+};
+
+sectorSelect.onchange = e=>{
+  currentSector = e.target.value;
+  loadRows();
+};
+
+document.getElementById("addRow").onclick = ()=>{
+  if(!currentSector) return toast("সেক্টর নির্বাচন করুন");
+  db.ref(`users/${currentUserId}/sectors/${currentSector}`).once("value", snap=>{
+    if(snap.val().status==="pending") return toast("Pending সেক্টরে নতুন সারি যোগ করা যাবে না");
+    const id = db.ref().push().key;
+    db.ref(`users/${currentUserId}/sectors/${currentSector}/rows/${id}`).set({username:"",coin:"",screenshot:"",status:"draft",time:Date.now()});
+  });
+};
+
+function isValidURL(str){
+  try{ new URL(str); return true; }catch(e){return false;}
+}
+
+const container = document.getElementById("adminMessageContainer");
+
+  firebase.database().ref("adminMessageN").on("value", snapshot => {
+    const data = snapshot.val();
+    if(data && data.text){
+      container.innerHTML = `
+        <p style="
+          color: black;
+          text-align: center;
+          box-shadow: 0 0 10px gold;
+          border-radius: 12px;
+          padding: 10px;
+          margin-bottom: 20px;">
+          <i style="font-size: 22px; margin-right: 5px; text-shadow: 0 0 10px red; color: yellow;" class="fas fa-fire-alt"></i>
+          ${data.text}
+        </p>
+      `;
+    }
+  });
+
+
+
+
+function loadRows(){
+  if(currentSector){ 
+    // সেক্টর সিলেক্ট করা থাকলে আগের মতো লোড হবে
+    db.ref(`users/${currentUserId}/sectors/${currentSector}/rows`).on("value", snap=>{
+      tableBody.innerHTML="";
+      let g=0,r=0,c=0;
+      snap.forEach(x=>{
+        c++;
+        const d=x.val();
+        const locked = ["pending","approved","rejected"].includes(d.status);
+        const tr=document.createElement("tr");
+        if(d.status==="approved"){ tr.style.background="#ecfdf3"; g++; }
+        if(d.status==="rejected"){ tr.style.background="#fee2e2"; r++; }
+        if(d.status==="pending"){ tr.style.background="#f0f0f0"; }
+        tr.innerHTML=`
+          <td ${locked?"":`contenteditable oninput="saveRow('${x.key}','username',this.innerText)"`}>${d.username||""}</td>
+          <td ${locked?"":`contenteditable oninput="saveRow('${x.key}','coin',this.innerText)"`}>${d.coin||""}</td>
+          <td ${locked?"":`contenteditable oninput="saveRow('${x.key}','screenshot',this.innerText)"`}>${d.screenshot||""}</td>
+          <td>${locked?"<b>LOCKED</b>":`<button class="icon-btn red" onclick="deleteRow('${x.key}')">মুছুন</button>`}</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+      rowCount.innerText="সারি: "+c;
+      greenCount.innerHTML=`✔ Approve: ${g}`;
+      redCount.innerHTML=`✖ Reject: ${r}`;
+    });
+  } else {
+    // সেক্টর নেই → ইউজারের সব সেক্টরের ডেটা থেকে কাউন্ট
+    db.ref(`users/${currentUserId}/sectors`).once("value", snap=>{
+      let g=0,r=0;
+      snap.forEach(sector=>{
+        const rows = sector.child("rows");
+        rows.forEach(rw=>{
+          const d = rw.val();
+          if(d.status==="approved") g++;
+          if(d.status==="rejected") r++;
+        });
+      });
+      tableBody.innerHTML="";  // টেবিল খালি রাখলে ভালো হয়
+      rowCount.innerText="সারি: 0"; // কোনো সারি দেখানো হবে না
+      greenCount.innerHTML=`✔ Approve: ${g}`;
+      redCount.innerHTML=`✖ Reject: ${r}`;
+    });
+  }
+}
+let saveTimer={};
+window.saveRow=(id,field,val)=>{
+  if(saveTimer[id]) clearTimeout(saveTimer[id]);
+  saveTimer[id]=setTimeout(()=>{
+    db.ref(`users/${currentUserId}/sectors/${currentSector}/rows/${id}`).once("value", snap=>{
+      if(["pending","approved","rejected"].includes(snap.val().status)) return;
+      if(field==="coin" && !/^\d*$/.test(val)) return toast("Coin শুধুমাত্র সংখ্যা হতে হবে");
+      if(field==="screenshot" && val.trim()!=="" && !isValidURL(val)) return toast("সঠিক URL দিন");
+      db.ref(`users/${currentUserId}/sectors/${currentSector}/rows/${id}`).update({[field]:val});
+    });
+  },800);
+};
+
+window.deleteRow=id=>{
+  db.ref(`users/${currentUserId}/sectors/${currentSector}/rows/${id}`).once("value", snap=>{
+    if(["pending","approved","rejected"].includes(snap.val().status)) return toast("LOCKED সারি");
+    if(confirm("এই সারি মুছবেন?")) db.ref(`users/${currentUserId}/sectors/${currentSector}/rows/${id}`).remove();
+  });
+};
+
+
+  // Kill Switch চেক
+  const killSwitchRef = db.ref("killSwitchN");
+
+  killSwitchRef.on("value", snapshot => {
+    const data = snapshot.val();
+    if(data && data.active){  // যদি active=true হয়
+      // পেজে একটি overlay দেখানো
+      const overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.top = 0;
+      overlay.style.left = 0;
+      overlay.style.width = "100%";
+      overlay.style.height = "100%";
+      overlay.style.background = "rgba(0,0,0,0.85)";
+      overlay.style.color = "white";
+      overlay.style.fontSize = "24px";
+      overlay.style.fontWeight = "bold";
+      overlay.style.display = "flex";
+      overlay.style.justifyContent = "center";
+      overlay.style.alignItems = "center";
+      overlay.style.zIndex = 999999;
+      overlay.innerText = data.message || "সার্ভিসটি বর্তমানে বন্ধ আছে। পরে চেষ্টা করুন।";
+
+      document.body.innerHTML = ""; // পেজের সব মুছে দাও
+      document.body.appendChild(overlay);
+    }
+  });
+
+
+document.getElementById("sendBtn").onclick=()=>{
+  if(!currentSector) return toast("সেক্টর নির্বাচন করুন");
+  const base = `users/${currentUserId}/sectors/${currentSector}`;
+  db.ref(base).once("value", sec=>{
+    if(sec.val().status==="pending") return toast("আগেই পাঠানো হয়েছে");
+    db.ref(base+"/rows").once("value", rows=>{
+      if(!rows.exists()) return toast("খালি সেক্টর");
+      let ok=true;
+      rows.forEach(r=>{
+        const d=r.val();
+        if(!d.username || !d.coin || !d.screenshot) ok=false;
+        if(!/^\d+$/.test(d.coin)) ok=false;
+        if(!isValidURL(d.screenshot)) ok=false;
+      });
+      if(!ok) return toast("সব তথ্য পূরণ করুন / Coin সংখ্যাই এবং Screenshot URL হতে হবে");
+      db.ref(base).update({status:"pending"});
+      rows.forEach(r=>{
+        db.ref(base+"/rows/"+r.key).update({status:"pending"});
+        db.ref("adminInbox").push({userId:currentUserId,sectorId:currentSector,rowId:r.key,time:Date.now()});
+      });
+      toast("Admin এর কাছে পাঠানো হয়েছে");
+    });
+  });
+};
+</script>
+<script>
+    document.addEventListener("click",()=>{const s=new Audio("./click.mp3");s.play()});
+</script>
+
+</body>
+</html>

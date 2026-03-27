@@ -1,0 +1,181 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Hind Siliguri', 'Poppins', sans-serif;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+body {
+  background: url("../images/ponno.jpg") no-repeat center center fixed;
+  background-size: cover;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 65px;
+}
+
+.wrap {
+  max-width: 1200px;
+  margin: 20px 30px;
+  background: rgba(255,255,255,0.95);
+  padding: 20px;
+  border-radius: 37px;
+  border: 4px solid black;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  overflow-x: auto;
+}
+
+header {
+  background: red;
+  padding: 20px;
+  font-size: 26px;
+  color: white;
+  border-top: 4px solid black;
+  border-bottom: 4px solid black;
+  display: flex;
+  align-items: center;   
+  justify-content: center; 
+  gap: 10px;  
+}
+
+.header-logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  border: 3px solid black;
+  object-fit: cover; 
+}
+
+ .span-all {
+  color: gold; 
+  font-weight: bold; 
+}
+
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+th, td {
+  border: 4px solid black;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+th {
+  background: #1d4ed8;
+  color: #fff;
+  font-weight: 600;
+}
+
+tr:hover {
+  background: rgba(37, 99, 235, 0.06);
+  transition: 0.2s ease-in-out;
+}
+
+.btn {
+  padding: 6px 10px;
+  border: 5px solid black;
+  border-radius: 27px;
+  cursor: pointer;
+  margin: 6px;
+  font-weight: 500;
+}
+
+.btn.view { background: #ec4899; color: #fff; }
+.btn.delete { background: #ef4444; color: #fff; }
+.btn.export { background: #2563eb; color: #fff; }
+
+#popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 50px;
+  z-index: 9999;
+}
+
+#popupContent {
+  background: #fff;
+  padding: 18px;
+  border-radius: 37px;
+  border: 4px solid black;
+  max-width: 900px;
+  width: 95%;
+  max-height: 80vh;
+  overflow: auto;
+  position: relative;
+}
+
+#popupContent h3 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+#closePopup {
+  position: absolute;
+  top: -15px;
+  right: 12px;
+  cursor: pointer;
+  color: #333;
+  font-weight: bold;
+  font-size: 32px;
+}
+
+.small { font-size: 13px; color: #333; }
+
+.countBadge {
+  background: #10b981;
+  color: #fff;
+  padding: 4px 8px;
+  border: 4px solid black;
+  border-radius: 16px;
+  font-weight: 600;
+}
+
+@media (min-width: 600px) {
+  body {
+    padding-bottom: 70px;
+  }
+  .wrap {
+    margin: 25px 30px;
+    padding: 30px;
+    border-radius: 45px;
+    max-width: 1400px;
+  }
+  header {
+    font-size: 30px;
+    padding: 30px;
+  }
+  .header-logo {
+    width: 75px;
+    height: 75px;
+  }
+  table {
+    min-width: 900px;
+    font-size: 1.1rem;
+  }
+  th, td {
+    padding: 14px 12px;
+  }
+  .btn {
+    padding: 14px 14px;
+    border-radius: 32px;
+    font-size: 1.1rem;
+  }
+  #popupContent {
+    max-width: 1100px;
+    padding: 25px;
+    border-radius: 45px;
+  }
+}

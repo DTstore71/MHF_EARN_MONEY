@@ -1,0 +1,271 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Hind Siliguri', 'Poppins', sans-serif;
+    font-weight: bold;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: url("../images/ponno.jpg") no-repeat center center fixed;
+    background-size: cover;
+    font-weight: bold;
+}
+
+.container {
+    width: 420px;
+    max-height: 80vh;
+    background: #fff;
+    padding: 25px;
+    margin: 20px 0;
+    border: 0px solid black;
+    border-radius: 23px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    overflow-y: auto;
+    overflow-x: hidden;
+    align-items: center;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #333;
+    background: yellow;
+    padding: 3px;
+    margin-left: 25px;
+    margin-right: 25px;
+    border-radius: 37px;
+    border: 0px solid black;
+}
+
+.profile-info {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    border: 0px solid black;
+    padding: 10px;
+    border-radius: 17px;
+    background: #f9f9f9;
+    transition: 0.3s;
+    background: #f9f9f9;
+    font-size: 15px;
+    min-height: 45px;
+}
+
+.profile-info:hover {
+    background: #ffe5e0;
+    transform: translateX(4px);
+}
+
+.profile-info i {
+    font-size: 18px;
+    color: #ff5e62;
+    margin-right: 12px;
+    min-width: 25px;
+    text-align: center;
+}
+
+.profile-info span.value {
+    flex: 1;
+    font-weight: 600;
+    color: #000;
+    overflow-wrap: anywhere;
+}
+
+.profile-info i.copy-icon {
+    cursor: pointer;
+    margin-left: 10px;
+    color: #555;
+}
+
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.button-group button,
+.container > button {
+    flex: 1 1 12%;
+    padding: 12px;
+    font-size: 15px;
+    border-radius: 17px;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.button-group button:nth-child(1) {
+    background: linear-gradient(135deg, red, blue);
+    color: #fff;
+    border: 1px solid black;
+}
+
+.button-group button:nth-child(2) {
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    color: #333;
+    border: 1px solid black;
+}
+
+.button-group button:nth-child(3) {
+    background: linear-gradient(135deg, red, blue);
+    color: #fff;
+    border: 1px solid black;
+}
+
+.button-group button:nth-child(4) {
+    background: linear-gradient(135deg, wheat, aqua);
+    color: #333;
+    border: 1px solid black;
+}
+
+.button-group button:nth-child(5) {
+    color: #333;
+    border: 1px solid black;
+}
+
+.container > button:first-child {
+    background: #ff6b6b;
+    color: #fff;
+}
+
+.container > button:last-child {
+    background: #1dd1a1;
+    color: #fff;
+}
+
+.profile-pic {
+    width: 110px;
+    height: 110px;
+    border-radius: 40px;
+    border: 0px solid black;
+    object-fit: cover;
+    margin: 0 auto 15px;
+    display: block;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    overflow-y: auto;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 21px;
+    width: 400px;
+    max-width: 90%;
+    max-height: 90vh;
+    position: relative;
+    border: 0px solid black;
+    overflow-y: auto;
+}
+
+.modal-content h3 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #333;
+    background: yellow;
+    padding: 3px;
+    margin-left: 25px;
+    margin-right: 25px;
+    border-radius: 15px;
+    border: 0px solid black;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 27px;
+    color: #333;
+    cursor: pointer;
+}
+
+.edit-section .form-group {
+    margin-bottom: 12px;
+    position: relative;
+}
+
+.edit-section .form-group i.left-icon {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    color: #ff5e62;
+}
+
+.edit-section .form-group input,
+.edit-section .form-group select {
+    width: 100%;
+    padding: 10px 35px;
+    border-radius: 17px;
+    border: 0px solid black;
+    font-size: 14px;
+    background: #f9f9f9;
+}
+
+.edit-section .form-group .toggle-eye {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #999;
+    font-size: 16px;
+}
+
+.edit-section .button-group button.save-btn {
+    background: linear-gradient(135deg, #ff6b6b, #ff4757);
+    color: #fff;
+}
+
+.edit-section .button-group button.cancel-btn {
+    background: linear-gradient(135deg, #576574, #2f3542);
+    color: #fff;
+}
+
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: black;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    opacity: 0.9;
+    z-index: 9999;
+}
+
+@media (max-width: 480px) {
+    .container {
+        width: 95%;
+        height: auto;
+    }
+
+    .profile-info {
+        font-size: 14px;
+        padding: 8px;
+    }
+
+    .button-group button {
+        font-size: 13px;
+        padding: 10px;
+    }
+}

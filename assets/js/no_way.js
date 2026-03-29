@@ -7,7 +7,7 @@ const firebaseConfig = {
   messagingSenderId: "141984102700",
   appId: "1:141984102700:web:37f719e81ae32df69ed489",
   measurementId: "G-PHTVR2KP9E"
-};
+};    
 
 firebase.initializeApp(firebaseConfig);
 
@@ -45,9 +45,12 @@ function updateRowCount() {
 
 // Save user data
 function saveUserData(data) {
-  if(!userId || !checkFeature()) return;
-  firebase.database().ref('users/' + userId + '/tables').update(data)
-    .catch(err => alert('Save Error: ' + err.message));
+  if(!userId || !currentSector || !checkFeature()) return;
+  
+  // শুধুমাত্র নির্দিষ্ট সেক্টরের ডাটা আপডেট হবে, বাকি সব (Username, Balance) সুরক্ষিত থাকবে
+  firebase.database().ref('users/' + userId + '/tables/' + currentSector)
+    .update(data[currentSector]) 
+    .catch(err => console.error('Save Error: ', err.message));
 }
 
 
@@ -124,62 +127,56 @@ sectorSelect.addEventListener('change', () => {
   currentSector = sectorSelect.value;
   loadTable();
 });
-
 document.getElementById('addSector').addEventListener('click', () => {
   if(!checkFeature() || !userId) return;
+
+  const choice = prompt("সেক্টরের ধরন নির্বাচন করুন:\n1) Fixed\n2) Any\nলিখুন 1 বা 2");
+  if(choice !== '1' && choice !== '2') {
+    showToast('❌ সঠিক সংখ্যা লিখুন: 1 বা 2');
+    return;
+  }
+
+  const type = (choice === '1') ? 'Fixed' : 'Any';
 
   const userRef = firebase.database().ref('users/' + userId);
 
   userRef.transaction(current => {
-
-    if(!current){
-      current = {
-        sectors: [],
-        tables: {},
-        deletedSectors: [],
-        sectorCounter: 2
-      };
-    }
+    if (!current) return current;
 
     current.sectors = current.sectors || [];
     current.tables = current.tables || {};
     current.deletedSectors = current.deletedSectors || [];
 
-    // ⭐ এখানে global sectorCounter ব্যবহার করা যাবে না
-    let counter = current.sectorCounter || 2;
-
+    let counter = current.sectorCounter || 1;
     let sectorName;
-    do{
-      sectorName = 'সেক্টর ' + counter;
+    do {
+      sectorName = `${type}-${counter.toString().padStart(2,'0')}`;
       counter++;
-    }while(
+    } while (
       current.sectors.includes(sectorName) ||
       current.deletedSectors.includes(sectorName)
     );
 
     current.sectors.push(sectorName);
-    current.tables[sectorName] = { headers:['Gmail','Password'], rows:[] };
+    current.tables[sectorName] = {
+      headers: ['Gmail','Password'],
+      rows: []
+    };
 
     current.sectorCounter = counter;
     currentSector = sectorName;
 
     return current;
-
   }, (err, committed, snap) => {
-
     if(err) return alert('Error adding sector: ' + err.message);
-
     if(committed){
       const data = snap.val() || {};
       loadSectors(data.sectors || []);
       sectorSelect.value = currentSector;
       loadTable();
     }
-
   });
-
 });
-
 
 
 function loadColorStatsRealtime() {
@@ -304,15 +301,17 @@ const container = document.getElementById("adminMessageContainer");
   
 // Attach autosave
 function attachAutoSave() {
-  tableBody.querySelectorAll('tr').forEach((tr, rowIndex) => {
-    tr.querySelectorAll('td').forEach((td, colIndex) => {
+  tableBody.querySelectorAll('tr').forEach((tr) => {
+    tr.querySelectorAll('td').forEach((td) => {
       if(td.contentEditable === 'true'){
         td.oninput = () => {
           if(!checkFeature()) return;
           const headers = Array.from(tableHeader.querySelectorAll('th')).slice(0,-1).map(th=>th.textContent.trim());
-          const rows = Array.from(tableBody.querySelectorAll('tr')).map(tr2 =>
+          const rows = Array.from(tableBody.querySelectorAll('tr')).map(tr2 => 
             Array.from(tr2.querySelectorAll('td')).slice(0,-1).map(td2 => td2.textContent.trim())
           );
+          
+          // নির্দিষ্ট সেক্টরের জন্য অবজেক্ট পাঠানো
           saveUserData({ [currentSector]: { headers, rows } });
         };
       }

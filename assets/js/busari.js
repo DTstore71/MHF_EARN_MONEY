@@ -65,7 +65,7 @@ function render(users, refCount){
 onAuthStateChanged(auth, user=>{
     if(!user) return;
     onValue(ref(db,"users/"+user.uid+"/GmtpPoints"), s=>{
-        pointsEl.textContent=(s.val()||0)+" GP";
+        pointsEl.textContent=(s.val()||0)+" MP";
     });
 });
 

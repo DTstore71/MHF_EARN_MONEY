@@ -256,22 +256,7 @@ function listenUsers(){
     });
 }
 
-function processGroupedData(){
-    groupedData = {};
-    Object.entries(usersData).forEach(([uid, u])=>{
-        if(u.projects){
-            Object.entries(u.projects).forEach(([pid, p])=>{
-                const entries = p.entries ? Object.entries(p.entries).map(([eid, e])=>({eid, ...e})) : [];
-                if(entries.length > 0){
-                    const key = `${uid}_${pid}`;
-                    const lastTime = Math.max(...entries.map(e => e.time || 0));
-                    const finalRate = (p.rate && p.rate > 0) ? p.rate : DEFAULT_RATE;
-                    groupedData[key] = { uid, pid, username: u.username || "Unknown", sector: p.name, rate: finalRate, entries, lastTime };
-                }
-            });
-        }
-    });
-}
+
 
 function handleSearch(val) {
     searchTerm = val.toLowerCase();
@@ -301,73 +286,85 @@ async function sendCustomMessage() {
     alert("মেসেজ পাঠানো হয়েছে!");
 }
 
-function renderMain() {
-    const tbody = document.getElementById("adminTable");
-    const frag = document.createDocumentFragment();
-    let totalPending = 0, totalApproved = 0, expectedPay = 0, totalPaidGlobal = 0;
+function renderMain() {  
+    const tbody = document.getElementById("adminTable");  
+    const frag = document.createDocumentFragment();  
+    
+    // গ্লোবাল কাউন্টার ভেরিয়েবল
+    let totalPendingGlobal = 0;
+    let totalApprovedGlobal = 0;
+    let expectedPayGlobal = 0;
+    let totalPaidGlobal = 0;
 
-    const filteredGroups = Object.values(groupedData)
-        // সার্চ ফিল্টার
-        .filter(g => g.username.toLowerCase().includes(searchTerm) || g.uid.toLowerCase().includes(searchTerm))
-        // পেন্ডিং নেই এবং পেইড আছে → হাইড
-        .filter(g => {
-            const pendingCount = g.entries.filter(e => e.state === 'pending').length;
-            const paidCount = g.entries.filter(e => e.paid || e.state === 'paid').length;
-            return !(pendingCount === 0 && paidCount > 0);
-        });
-
-    // সর্বশেষ সময় অনুযায়ী sort
-    filteredGroups.sort((a, b) => b.lastTime - a.lastTime).forEach(g => {
-        const key = `${g.uid}_${g.pid}`;
+    // ১. প্রথমে সম্পূর্ণ ডাটা থেকে গ্লোবাল হিসাব বের করা (ফিল্টার ছাড়া)
+    Object.values(groupedData).forEach(g => {
         const entries = g.entries;
-        const pendingCount = entries.filter(e => e.state === 'pending').length;
-        const approvedCount = entries.filter(e => e.state === 'approved' || e.state === 'paid').length;
-        const rejectedCount = entries.filter(e => e.state === 'rejected').length;
+        totalPendingGlobal += entries.filter(e => e.state === 'pending').length;
+        totalApprovedGlobal += entries.filter(e => e.state === 'approved' || e.state === 'paid').length;
+        
+        // আনপেইড অ্যামাউন্ট (শুধু এপ্রুভড কিন্তু পেইড না)
         const unpaidApproved = entries.filter(e => e.state === 'approved' && !e.paid);
+        expectedPayGlobal += unpaidApproved.length * g.rate;
+
+        // পেইড অ্যামাউন্ট হিসাব
         const paidEntries = entries.filter(e => e.paid || e.state === 'paid');
-        const totalPaidInThisGroup = paidEntries.reduce((sum, e) => sum + (e.paidAmount || g.rate), 0);
-
-        totalPending += pendingCount;
-        totalApproved += approvedCount;
-        expectedPay += unpaidApproved.length * g.rate;
-        totalPaidGlobal += totalPaidInThisGroup;
-
-        const tr = document.createElement("tr");
-        if (approvedCount > 0 || rejectedCount > 0) tr.className = "row-green"; 
-        else if (exportedKeys.has(key)) tr.className = "row-red"; 
-
-        tr.innerHTML = `
-            <td><i class="fas fa-user-circle"></i> <b>${g.username}</b><br><small style="color:#94a3b8">${g.uid}</small></td>
-            <td style="color:var(--gold)"><i class="fas fa-folder-open"></i> ${g.sector}</td>
-            <td>
-                <div style="display:flex; align-items:center; gap:5px;">
-                    <input type="number" value="${g.rate}" id="rateInput_${key}" style="width:55px; background:#0f172a; color:white; border:1px solid #334155; border-radius:4px; padding:2px 5px;">
-                    <button class="btn btn-view" onclick="updateSingleRate('${g.uid}', '${g.pid}', 'rateInput_${key}')" style="padding:4px 8px;"><i class="fas fa-save"></i></button>
-                </div>
-            </td>
-            <td style="color:var(--success)"><i class="fas fa-check-double"></i> ${approvedCount}</td>
-            <td style="color:var(--danger)"><i class="fas fa-clock"></i> ${unpaidApproved.length}</td>
-            <td><span style="color: var(--primary)"><i class="fas fa-money-bill-wave"></i> ${unpaidApproved.length * g.rate}৳</span></td>
-            <td>
-                <div style="display:flex; gap:5px;">
-                    <button class="btn btn-view" onclick="openDetails('${key}')" title="View Items"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-success" onclick="bulkUpdate('${key}', 'approved')" title="Approve All Pending"><i class="fas fa-check-circle"></i></button>
-                    <button class="btn btn-delete" onclick="bulkUpdate('${key}', 'rejected')" title="Reject All Pending"><i class="fas fa-times-circle"></i></button>
-                    <button class="btn btn-success" onclick="payGroup('${key}')" title="Pay Now"><i class="fas fa-wallet"></i></button>
-                </div>
-            </td>
-        `;
-        frag.appendChild(tr);
+        totalPaidGlobal += paidEntries.reduce((sum, e) => sum + (e.paidAmount || g.rate), 0);
     });
 
-    requestAnimationFrame(() => {
-        tbody.innerHTML = "";
-        tbody.appendChild(frag);
-        document.getElementById("totalPending").innerText = totalPending;
-        document.getElementById("totalApproved").innerText = totalApproved;
-        document.getElementById("expectedPay").innerText = expectedPay + "৳";
-        document.getElementById("totalPaid").innerText = totalPaidGlobal + "৳";
-    });
+    // ২. এবার টেবিলের জন্য ডাটা ফিল্টার এবং রেন্ডার করা
+    const filteredGroups = Object.values(groupedData)  
+        .filter(g => g.username.toLowerCase().includes(searchTerm) || g.uid.toLowerCase().includes(searchTerm))  
+        .filter(g => {  
+            const pendingCount = g.entries.filter(e => e.state === 'pending').length;  
+            const paidCount = g.entries.filter(e => e.paid || e.state === 'paid').length;  
+            return !(pendingCount === 0 && paidCount > 0);  
+        });  
+
+    filteredGroups.sort((a, b) => b.lastTime - a.lastTime).forEach(g => {  
+        const key = `${g.uid}_${g.pid}`;  
+        const entries = g.entries;  
+        const pendingCount = entries.filter(e => e.state === 'pending').length;  
+        const approvedCount = entries.filter(e => e.state === 'approved' || e.state === 'paid').length;  
+        const rejectedCount = entries.filter(e => e.state === 'rejected').length;  
+        const unpaidApprovedCount = entries.filter(e => e.state === 'approved' && !e.paid).length;  
+
+        const tr = document.createElement("tr");  
+        if (approvedCount > 0 || rejectedCount > 0) tr.className = "row-green";   
+        else if (exportedKeys.has(key)) tr.className = "row-red";   
+
+        tr.innerHTML = `  
+            <td><i class="fas fa-user-circle"></i> <b>${g.username}</b><br><small style="color:#94a3b8">${g.uid}</small></td>  
+            <td style="color:var(--gold)"><i class="fas fa-folder-open"></i> ${g.sector}</td>  
+            <td>  
+                <div style="display:flex; align-items:center; gap:5px;">  
+                    <input type="number" value="${g.rate}" id="rateInput_${key}" style="width:55px; background:#0f172a; color:white; border:1px solid #334155; border-radius:4px; padding:2px 5px;">  
+                    <button class="btn btn-view" onclick="updateSingleRate('${g.uid}', '${g.pid}', 'rateInput_${key}')" style="padding:4px 8px;"><i class="fas fa-save"></i></button>  
+                </div>  
+            </td>  
+            <td style="color:var(--success)"><i class="fas fa-check-double"></i> ${approvedCount}</td>  
+            <td style="color:var(--danger)"><i class="fas fa-clock"></i> ${unpaidApprovedCount}</td>  
+            <td><span style="color: var(--primary)"><i class="fas fa-money-bill-wave"></i> ${unpaidApprovedCount * g.rate}৳</span></td>  
+            <td>  
+                <div style="display:flex; gap:5px;">  
+                    <button class="btn btn-view" onclick="openDetails('${key}')" title="View Items"><i class="fas fa-eye"></i></button>  
+                    <button class="btn btn-success" onclick="bulkUpdate('${key}', 'approved')" title="Approve All Pending"><i class="fas fa-check-circle"></i></button>  
+                    <button class="btn btn-delete" onclick="bulkUpdate('${key}', 'rejected')" title="Reject All Pending"><i class="fas fa-times-circle"></i></button>  
+                    <button class="btn btn-success" onclick="payGroup('${key}')" title="Pay Now"><i class="fas fa-wallet"></i></button>  
+                </div>  
+            </td>  
+        `;  
+        frag.appendChild(tr);  
+    });  
+
+    // ৩. স্ট্যাটাস কার্ডগুলোতে মোট ভ্যালু বসানো
+    requestAnimationFrame(() => {  
+        tbody.innerHTML = "";  
+        tbody.appendChild(frag);  
+        document.getElementById("totalPending").innerText = totalPendingGlobal;  
+        document.getElementById("totalApproved").innerText = totalApprovedGlobal;  
+        document.getElementById("expectedPay").innerText = expectedPayGlobal + "৳";  
+        document.getElementById("totalPaid").innerText = totalPaidGlobal + "৳";  
+    });  
 }
 
 async function bulkUpdate(key, newState) {
@@ -393,18 +390,75 @@ async function updateSingleRate(uid, pid, inputId) {
     }
 }
 
+// --- আপডেট করা setGlobalRate ফাংশন ---
 async function setGlobalRate() {
-    const newRate = prompt("সবার জন্য একটি নির্দিষ্ট রেট দিন:");
-    if (!newRate || isNaN(newRate)) return;
-    localStorage.setItem("mhf_global_rate", newRate);
+    const nRate = prompt("N দিয়ে শুরু হওয়া সেক্টরগুলোর জন্য রেট দিন (Global N):", "10");
+    if (nRate === null || isNaN(nRate)) return;
+
+    const cRate = prompt("C দিয়ে শুরু হওয়া সেক্টরগুলোর জন্য রেট দিন (Global C):", "15");
+    if (cRate === null || isNaN(cRate)) return;
+
+    // লোকাল স্টোরেজে সেভ করে রাখা (ভবিষ্যতে ব্যবহারের জন্য)
+    localStorage.setItem("mhf_global_n_rate", nRate);
+    localStorage.setItem("mhf_global_c_rate", cRate);
+
     const updates = {};
+    const nVal = parseFloat(nRate);
+    const cVal = parseFloat(cRate);
+
     Object.values(groupedData).forEach(g => {
-        updates[`users/${g.uid}/projects/${g.pid}/rate`] = parseFloat(newRate);
+        const sectorName = g.sector.trim().toUpperCase();
+        let targetRate = null;
+
+        if (sectorName.startsWith('N')) {
+            targetRate = nVal;
+        } else if (sectorName.startsWith('C')) {
+            targetRate = cVal;
+        }
+
+        // শুধুমাত্র N বা C থাকলে ডাটাবেস আপডেট হবে
+        if (targetRate !== null) {
+            updates[`users/${g.uid}/projects/${g.pid}/rate`] = targetRate;
+        }
     });
-    await db.ref().update(updates);
-    alert("Global Rate Applied!");
+
+    if (Object.keys(updates).length > 0) {
+        await db.ref().update(updates);
+        alert(`রেট আপডেট হয়েছে!\nN Sectors: ${nVal}৳\nC Sectors: ${cVal}৳`);
+    } else {
+        alert("N বা C দিয়ে শুরু হওয়া কোনো সেক্টর পাওয়া যায়নি!");
+    }
 }
 
+// --- processGroupedData ফাংশনে ডিফল্ট রেট লজিক আপডেট (ঐচ্ছিক কিন্তু ভালো) ---
+function processGroupedData(){      
+    groupedData = {};      
+    const savedN = parseFloat(localStorage.getItem("mhf_global_n_rate") || "10");
+    const savedC = parseFloat(localStorage.getItem("mhf_global_c_rate") || "15");
+
+    Object.entries(usersData).forEach(([uid, u])=>{      
+        if(u.projects){      
+            Object.entries(u.projects).forEach(([pid, p])=>{      
+                const entries = p.entries ? Object.entries(p.entries).map(([eid, e])=>({eid, ...e})) : [];      
+                if(entries.length > 0){      
+                    const key = `${uid}_${pid}`;      
+                    const lastTime = Math.max(...entries.map(e => e.time || 0));
+                    
+                    // যদি আগে থেকে কোনো স্পেসিফিক রেট না থাকে তবে N/C চেক করবে
+                    let finalRate = p.rate || 0;
+                    if (!finalRate) {
+                        const sName = (p.name || "").trim().toUpperCase();
+                        if (sName.startsWith('N')) finalRate = savedN;
+                        else if (sName.startsWith('C')) finalRate = savedC;
+                        else finalRate = DEFAULT_RATE;
+                    }
+
+                    groupedData[key] = { uid, pid, username: u.username || "Unknown", sector: p.name, rate: finalRate, entries, lastTime };      
+                }      
+            });      
+        }      
+    });      
+}
 async function payGroup(key){
     const group = groupedData[key];
     const unpaid = group.entries.filter(e => e.state==='approved' && !e.paid);
@@ -424,7 +478,9 @@ async function payGroup(key){
 }
 
 function exportAllData() {
-    let exportList = [];
+    if(!groupedData || Object.keys(groupedData).length===0) return alert("ডাটা নেই!");
+
+    const sheets = {};  // sheetName -> rowList
     let notifyMap = {};
     Object.values(groupedData).forEach(g => {
         const key = `${g.uid}_${g.pid}`;
@@ -433,23 +489,46 @@ function exportAllData() {
             exportedKeys.add(key);
             if(!notifyMap[g.uid]) notifyMap[g.uid] = [];
             notifyMap[g.uid].push({sector: g.sector, count: g.entries.length});
+
+            // সেক্টরের প্রথম অক্ষর অনুযায়ী শীট নাম
+            let sheetName = "Others";
+            const firstChar = (g.sector || "").trim().toUpperCase().charAt(0);
+            if(firstChar === 'N') sheetName = "N_Sectors";
+            else if(firstChar === 'C') sheetName = "C_Sectors";
+
+            if(!sheets[sheetName]) sheets[sheetName] = [];
+            
             g.entries.forEach(e => {
-                exportList.push({ "Worker": g.username, "Sector": g.sector, "UID": e.username || '', "Pass": e.password || '', "2FA": e.twoFA || '' });
+                sheets[sheetName].push({
+                    "Worker": g.username,
+                    "Sector": g.sector,
+                    "Username": e.username || '',
+                    "Pass": e.password || '',
+                    "2FA": e.twoFA || ''
+                });
             });
         }
     });
-    if(exportList.length === 0) return alert("নতুন কোনো ডাটা নেই!");
+
+    if(Object.keys(sheets).length === 0) return alert("নতুন কোনো ডাটা নেই!");
+
     localStorage.setItem("mhf_exported_keys", JSON.stringify(Array.from(exportedKeys)));
-    const ws = XLSX.utils.json_to_sheet(exportList);
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Data");
+    Object.entries(sheets).forEach(([sheetName, rows]) => {
+        const ws = XLSX.utils.json_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+
     XLSX.writeFile(wb, `MHF_Export_${Date.now()}.xlsx`);
+
+    // অটোমেটিক মেসেজ পাঠানো
     Object.entries(notifyMap).forEach(([uid, sectors]) => {
         sectors.forEach(s => sendAutoMessage(uid, s.sector, s.count));
     });
+
     renderMain();
 }
-
 function initChart() {
     const ctx = document.getElementById('submissionChart').getContext('2d');
     myChart = new Chart(ctx, {
@@ -472,31 +551,38 @@ function updateChart(){
     myChart.update();
 }
 
-function openDetails(key){
+// ১. openDetails ফাংশনটি একটু আপডেট করুন যাতে ডাটা রেন্ডার হওয়ার সময় লেটেস্ট ডাটা পায়
+function openDetails(key) {
     const group = groupedData[key];
+    if (!group) return closePopup(); // গ্রুপ না থাকলে পপআপ বন্ধ
+
     document.getElementById("popupTitle").innerHTML = `<i class="fas fa-users-cog"></i> ${group.username} - ${group.sector}`;
     const body = document.getElementById("popupBody");
+    
+    // ম্যাপ করার আগে চেক করে নিন এন্ট্রি আছে কিনা
     body.innerHTML = group.entries.map(e => `
         <tr>
             <td><i class="fas fa-at"></i> ${e.username}</td>
             <td><i class="fas fa-key"></i> ${e.password}</td>
             <td style="color:gold"><i class="fas fa-shield-alt"></i> ${e.twoFA}</td>
-            <td><b>${e.state.toUpperCase()}</b></td>
+            <td><b style="color:${e.state === 'approved' ? 'var(--success)' : (e.state === 'rejected' ? 'var(--danger)' : 'var(--gold)')}">${e.state.toUpperCase()}</b></td>
             <td>
-                <button class="btn btn-success" onclick="updateStatus('${group.uid}','${group.pid}','${e.eid}','approved')"><i class="fas fa-check"></i></button>
-                <button class="btn btn-delete" onclick="updateStatus('${group.uid}','${group.pid}','${e.eid}','rejected')"><i class="fas fa-times"></i></button>
-                <button class="btn btn-delete" onclick="deleteEntry('${group.uid}','${group.pid}','${e.eid}')"><i class="fas fa-trash-alt"></i></button>
+                <button class="btn btn-success" onclick="updateStatus('${group.uid}','${group.pid}','${e.eid}','approved','${key}')"><i class="fas fa-check"></i></button>
+                <button class="btn btn-delete" onclick="updateStatus('${group.uid}','${group.pid}','${e.eid}','rejected','${key}')"><i class="fas fa-times"></i></button>
+                <button class="btn btn-delete" onclick="deleteEntry('${group.uid}','${group.pid}','${e.eid}','${key}')"><i class="fas fa-trash-alt"></i></button>
             </td>
         </tr>
     `).join('');
     document.getElementById("popup").style.display = "flex";
 }
 
-async function updateStatus(uid, pid, eid, state){
+// ২. updateStatus এ 'key' প্যারামিটার পাস করুন যাতে সাথে সাথে পপআপ রিফ্রেশ হয়
+async function updateStatus(uid, pid, eid, state, key) {
     await db.ref(`users/${uid}/projects/${pid}/entries/${eid}`).update({ state, paid: false });
-    exportedKeys.delete(`${uid}_${pid}`);
+    exportedKeys.delete(key);
     localStorage.setItem("mhf_exported_keys", JSON.stringify(Array.from(exportedKeys)));
-    openDetails(`${uid}_${pid}`);
+    // ডাটাবেস লিসেনার অটোমেটিক রেন্ডার মেইন কল করবে, তাই এখানে শুধু পপআপ আপডেট করলেই হবে
+    setTimeout(() => openDetails(key), 500); 
 }
 
 async function deleteEntry(uid, pid, eid) {

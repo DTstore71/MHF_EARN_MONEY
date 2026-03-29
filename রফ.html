@@ -279,53 +279,96 @@ function exit(){
     localStorage.removeItem('mhf_session');
     location.reload();
 }
-window.onload = () => {
-    // Check session
+// Load latest rates from DB
+let rates = { A: 0, F: 0 };
+
+// Load rates on startup
+async function loadRates(){
+    const snapA = await db.ref('admin_settings/globalPrice').once('value');
+    rates.A = snapA.val() || 18;
+
+    const snapF = await db.ref('admin_settings/FSectorPrice').once('value');
+    rates.F = snapF.val() || 20; // F sector default
+}
+
+// Auto-set rate for a single message
+async function autoSetRate(id, sector){
+    const firstChar = (sector||'').charAt(0).toUpperCase();
+    let rate = firstChar==='A' ? rates.A : firstChar==='F' ? rates.F : 0;
+    if(rate>0) await db.ref(`admin_messages/${id}/basePrice`).set(rate);
+}
+
+// Apply rates to all existing raw data
+function applyRatesToExisting(){
+    Object.entries(raw).forEach(([id,msg])=>{
+        if(!msg.basePrice && !msg.hidden) autoSetRate(id, msg.sector);
+    });
+}
+
+// --- window.onload updated ---
+window.onload = async () => {
     if(localStorage.getItem('mhf_session')){
         document.getElementById('auth').style.display='none';
         sync();
     }
 
+    await loadRates(); // Load latest rates from DB
+
     const rateEl = document.getElementById("todayRate");
+    rateEl.textContent = "৳" + rates.A.toFixed(2); // Show A sector as global
 
-    // Load current global rate from Firebase
-    db.ref('admin_settings/globalPrice').once('value').then(snap=>{
-        const rate = snap.val() || 0;
-        rateEl.textContent = "৳" + parseFloat(rate).toFixed(2);
-    });
+    // Global Rate Button
+    document.getElementById('globalRateBtn').onclick = async () => {
+        const rA = parseFloat(prompt("Enter New Rate for A sectors (৳):"));
+        const rF = parseFloat(prompt("Enter New Rate for F sectors (৳):"));
+        if(isNaN(rA)||isNaN(rF)) return alert("Invalid input!");
 
-    // Global Rate setup
-    async function globalRate(){
-        const r = prompt("Enter New Global Rate (৳):");
-        if(!r || isNaN(r)) return;
-        const rate = parseFloat(r);
+        rates.A = rA;
+        rates.F = rF;
 
         const updates = {};
-        Object.keys(raw).forEach(id => { 
-            if(!raw[id].hidden) updates[`admin_messages/${id}/basePrice`] = rate; 
+        Object.keys(raw).forEach(id=>{
+            if(raw[id].hidden) return;
+            const sec = raw[id].sector || '';
+            const firstChar = sec.charAt(0).toUpperCase();
+            if(firstChar==='A') updates[`admin_messages/${id}/basePrice`] = rA;
+            if(firstChar==='F') updates[`admin_messages/${id}/basePrice`] = rF;
         });
-        updates[`admin_settings/globalPrice`] = rate;
-        await db.ref().update(updates);
 
-        rateEl.textContent = "৳ " + rate.toFixed(2);
-        alert("Global Rate Updated!");
-    }
-    document.getElementById('globalRateBtn').onclick = globalRate;
-};function sync(){
+        updates[`admin_settings/globalPrice`] = rA;
+        updates[`admin_settings/FSectorPrice`] = rF;
+
+        await db.ref().update(updates);
+        rateEl.textContent = "৳" + rA.toFixed(2);
+        alert(`Rates updated! A: ৳${rA}, F: ৳${rF}`);
+    };
+
+    // Auto-update new entries
+    db.ref('admin_messages').on('child_added', snap=>{
+        const val = snap.val();
+        if(!val || val.hidden || val.basePrice) return;
+        autoSetRate(snap.key, val.sector);
+    });
+
+    // Apply to existing entries
+    applyRatesToExisting();
+};
+
+function sync(){
     showLoad(30);
-    db.ref('users').on('value',s=>{
-        users=s.val()||{};
-        document.getElementById('stat_u').innerText=Object.keys(users).length;
+    db.ref('users').on('value', s=>{
+        users = s.val()||{};
+        document.getElementById('stat_u').innerText = Object.keys(users).length;
         refresh();
     });
-    db.ref('admin_messages').on('value',s=>{
-        raw=s.val()||{};
+
+    db.ref('admin_messages').on('value', s=>{
+        raw = s.val()||{};
         calcStats();
         refresh();
         showLoad(100);
     });
 }
-
 function showLoad(w){
     document.getElementById('loading').style.width=w+'%';
 }
@@ -501,30 +544,55 @@ async function settle(uid,sec){
     await db.ref().update(up);
     alert(`৳${amount} Added to user balance!`);
 }
+// --- Bulk Export (Safe + Status) by Sector Type ---
+function bulkExport() {
+    const aData = [];
+    const fData = [];
 
-// --- Bulk Export (Safe + Status) ---
-function bulkExport(){
-    const data = Object.entries(raw)
-        .filter(([id,v])=> !v.exported && !v.hidden)
-        .map(([id,v]) => ({
-            Gmail:(v.row && v.row[0])||'',
-            Pass:(v.row && v.row[1])||'',
-            Sector:v.sector||'',
-            Status:v.color||'Pending'
-        }));
+    // 1️⃣ Prepare data arrays
+    Object.entries(raw).forEach(([id, v]) => {
+        if (v.hidden || v.exported) return; // Safe check
 
-    if(!data.length) return alert("No new data!");
+        const row = {
+    Username: users[v.userId]?.username || 'Unknown',
+    Gmail: (v.row && v.row[0]) || '',
+    Pass: (v.row && v.row[1]) || '',
+    Sector: v.sector || '',
+    Status: v.color || 'Pending'
+};
 
-    const sheet = XLSX.utils.json_to_sheet(data);
+        const firstChar = ((v.sector || '').trim().charAt(0) || '').toUpperCase();
+if(firstChar === 'A') aData.push(row);
+else if(firstChar === 'F') fData.push(row);
+    });
+
+    // 2️⃣ Check if there is data to export
+    if (!aData.length && !fData.length) return alert("No new data to export!");
+
+    // 3️⃣ Create Excel file with separate sheets for A & F sectors
     const book = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(book, sheet, "MHF_Data");
+
+    if (aData.length) {
+        const aSheet = XLSX.utils.json_to_sheet(aData);
+        XLSX.utils.book_append_sheet(book, aSheet, "A_Sectors");
+    }
+
+    if (fData.length) {
+        const fSheet = XLSX.utils.json_to_sheet(fData);
+        XLSX.utils.book_append_sheet(book, fSheet, "F_Sectors");
+    }
+
+    // 4️⃣ Save file with timestamp
     XLSX.writeFile(book, `MHF_Export_${Date.now()}.xlsx`);
 
-    const up = {};
-    Object.entries(raw).forEach(([id,v])=>{
-        if(!v.exported) up[`admin_messages/${id}/exported`] = true;
+    // 5️⃣ Mark exported in DB
+    const updates = {};
+    Object.entries(raw).forEach(([id, v]) => {
+        if (!v.exported && !v.hidden) updates[`admin_messages/${id}/exported`] = true;
     });
-    db.ref().update(up);
+    db.ref().update(updates);
+
+    alert("Export completed safely! ✅");
 }
 
 // --- Close Modal ---

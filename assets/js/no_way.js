@@ -130,7 +130,7 @@ sectorSelect.addEventListener('change', () => {
 document.getElementById('addSector').addEventListener('click', () => {
   if(!checkFeature() || !userId) return;
 
-  const choice = prompt("সেক্টরের ধরন নির্বাচন করুন:\n1) Fixed\n2) Any\nলিখুন 1 বা 2");
+  const choice = prompt("সেক্টরের ধরন নির্বাচন করুন:\n1) Fixed_Password_(aass1122)\n2) Any_OR_Random_Password\nলিখুন 1 বা 2");
   if(choice !== '1' && choice !== '2') {
     showToast('❌ সঠিক সংখ্যা লিখুন: 1 বা 2');
     return;

@@ -329,8 +329,33 @@ tbody tr:hover {
 }
 </style>
 
-<div id="adminMessageContainer"></div>
+<div id="adminMessageContainer">
+  <span style="display:block; text-align:center;">একটু অপেক্ষা করো বন্ধু....</span>
+</div>
 
+<div id="youtubeBox">
+  <iframe 
+    src="https://www.youtube.com/embed/IrBweprhfiQ" 
+    title="YouTube video"
+    frameborder="0"
+    allowfullscreen>
+  </iframe>
+</div>
+<style>
+    #youtubeBox {
+  margin: 20px 0;
+  border: 4px solid black;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #000;
+}
+
+#youtubeBox iframe {
+  width: 100%;
+  height: 160px;
+  display: block;
+}
+</style>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 

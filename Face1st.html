@@ -337,7 +337,34 @@ tbody tr:hover {
 }
 </style>
 
-<div id="adminMessageContainer"></div>
+<div id="adminMessageContainer">
+  <span style="display:block; text-align:center;">একটু অপেক্ষা করো বন্ধু....</span>
+</div>
+
+<div id="youtubeBox">
+  <iframe 
+    src="https://www.youtube.com/embed/IrBweprhfiQ" 
+    title="YouTube video"
+    frameborder="0"
+    allowfullscreen>
+  </iframe>
+</div>
+<style>
+    #youtubeBox {
+  margin: 20px 0;
+  border: 4px solid black;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #000;
+}
+
+#youtubeBox iframe {
+  width: 100%;
+  height: 160px;
+  display: block;
+}
+</style>
+
 
 
 
@@ -1030,7 +1057,7 @@ window.deleteRow = (id) => {
       .catch(err => toast("Delete error: " + err.message));
   });
 };
-const killSwitchRef = db.ref("killSwitchF");
+const killSwitchRef = db.ref("killSwitchV");
 
 killSwitchRef.on("value", snapshot => {
   const data = snapshot.val();

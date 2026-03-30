@@ -136,7 +136,7 @@ document.getElementById('addSector').addEventListener('click', () => {
     return;
   }
 
-  const type = (choice === '1') ? 'Fixed' : 'Any';
+  const type = (choice === '1') ? 'Fixed_aass1122' : 'Any_Or_Random';
 
   const userRef = firebase.database().ref('users/' + userId);
 

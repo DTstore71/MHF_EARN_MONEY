@@ -194,7 +194,7 @@
                     <tr>
                         <th>UID</th>
                         <th>Password</th>
-                        <th>2FA Code</th>
+                        <th>2FA OR COOKIES</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -499,14 +499,15 @@ function exportAllData() {
             if(!sheets[sheetName]) sheets[sheetName] = [];
             
             g.entries.forEach(e => {
-                sheets[sheetName].push({
-                    "Worker": g.username,
-                    "Sector": g.sector,
-                    "Username": e.username || '',
-                    "Pass": e.password || '',
-                    "2FA": e.twoFA || ''
-                });
-            });
+    sheets[sheetName].push({
+        "Worker": g.username,
+        "Sector": g.sector,
+        "Username": e.username || '',
+        "Pass": e.password || '',
+        // C_Sectors হলে "Cookies", অন্য সব জায়গায় 2FA থাকবে
+        [sheetName === "C_Sectors" ? "Cookies" : "2FA"]: e.twoFA || ''
+    });
+});
         }
     });
 

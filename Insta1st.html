@@ -251,7 +251,7 @@ tbody tr:hover {
 }
 
 #rowCount {
-  text-align: right;
+  text-align: center;
   font-weight: 600;
   margin-top: 5px;
 }
@@ -572,10 +572,10 @@ tbody tr:hover {
 
   <div class="table-wrap">
     <table id="spreadsheet">
-      <thead><tr id="tableHeader"><th>Username</th><th>Pass</th><th>2FA</th><th>Actions</th></tr></thead>
+      <thead><tr id="tableHeader"><th>Username</th><th>Pass</th><th> 2FA</th><th>Actions</th></tr></thead>
       <tbody id="tableBody"></tbody>
     </table>
-    <div id="rowCount">সারি: 0</div>
+    <div style="text-align: center;" id="rowCount">সারি: 0</div>
   </div>
 </div>
 <script>
@@ -838,19 +838,45 @@ function loadSectors(){
   });    
 }    
     
-document.getElementById("addSector").onclick = async ()=>{    
-  const name = prompt("নতুন সেক্টর নাম");    
-  if(!name || name.trim().length < 2) return;    
-    
-  const dup = await db.ref(`users/${currentUserId}/projects`).orderByChild("name").equalTo(name).once("value");    
-  if(dup.exists()) return toast("এই নামের সেক্টর আগে থেকেই আছে");    
-    
-  const ref = db.ref(`users/${currentUserId}/projects`).push({name,state:"draft",time:Date.now()});    
-  currentSector = ref.key;    
-  sectorSelect.value = currentSector;    
-  loadRows();    
-  toast("নতুন সেক্টর তৈরি হয়েছে");    
-};    
+document.getElementById("addSector").onclick = async () => {
+  if (!currentUserId) return toast("প্রথমে লগইন করুন!");
+
+  const choice = prompt(
+    "সেক্টরের ধরন নির্বাচন করুন:\n1) Normal_2FA\n2) Cookies\nলিখুন 1 বা 2"
+  );
+  if (choice !== '1' && choice !== '2') {
+    return toast("❌ সঠিক সংখ্যা লিখুন: 1 বা 2");
+  }
+
+  const type = choice === '1' ? 'Normal_2FA' : 'Cookies';
+
+  const userRef = db.ref(`users/${currentUserId}/projects`);
+  const snapshot = await userRef.once("value");
+  const projects = snapshot.val() || {};
+
+  let counter = 1;
+  const existingNames = Object.values(projects).map(p => p.name);
+  let sectorName;
+  do {
+    sectorName = `${type}-${counter.toString().padStart(2,'0')}`;
+    counter++;
+  } while (existingNames.includes(sectorName));
+
+  // ✅ নতুন সেক্টর শুধু draft থাকবে
+  const newRef = userRef.push({
+    name: sectorName,
+    state: "draft",  // এখানে draft ঠিক আছে
+    time: Date.now()
+  });
+
+  currentSector = newRef.key;
+  sectorSelect.value = currentSector;
+
+  loadSectors();
+  loadRows();
+
+  toast(`নতুন সেক্টর তৈরি হয়েছে: ${sectorName}`);
+};
     
 document.getElementById("deleteSector").onclick = ()=>{    
   if(!currentSector) return toast("সেক্টর নির্বাচন করুন");    
@@ -908,66 +934,79 @@ firebase.database().ref("adminMessageI").on("value", snapshot => {
   }    
 });    
     
-// আপনার loadRows ফাংশনটি নিচেরটি দিয়ে রিপ্লেস করুন  
-function loadRows(){    
-  if(currentSector){    
-    db.ref(`users/${currentUserId}/projects/${currentSector}/entries`).on("value", snap=>{    
-      tableBody.innerHTML="";    
-      let g=0,r=0,c=0;    
-      snap.forEach(x=>{    
-        c++;    
-        const d=x.val();    
-          
-        // এখানে লজিক আপডেট করা হয়েছে: draft ছাড়া বাকি সব স্টেট লক থাকবে  
-        const isLocked = d.state !== "draft";   
-          
-        const tr=document.createElement("tr");    
-          
-        // কালার লজিক  
-        if(d.state==="approved" || d.state==="paid"){   
-            tr.style.background="#ecfdf3"; // হালকা সবুজ  
-            g++;   
-        } else if(d.state==="rejected"){   
-            tr.style.background="#fee2e2"; // হালকা লাল  
-            r++;   
-        } else if(d.state==="pending"){   
-            tr.style.background="#f8fafc"; // হালকা নীল/ধূসর  
-        }  
-  
-        // Table Row গঠন  
-        tr.innerHTML=`    
-          <td ${isLocked ? "" : `contenteditable="true" oninput="saveRow('${x.key}','username',this.innerText)"`}>${d.username||""}</td>    
-          <td ${isLocked ? "" : `contenteditable="true" oninput="saveRow('${x.key}','password',this.innerText)"`}>${d.password||""}</td>    
-          <td ${isLocked ? "" : `contenteditable="true" oninput="saveRow('${x.key}','twoFA',this.innerText)"`}>${d.twoFA||""}</td>    
-          <td style="text-align:center;">  
-            ${isLocked ? `<span style="color:#64748b; font-weight:bold;"><i class="fas fa-lock"></i> ${d.state.toUpperCase()}</span>` : `<button class="icon-btn red" onclick="deleteRow('${x.key}')"><i class="fas fa-trash"></i></button>`}  
-          </td>    
-        `;    
-        tableBody.appendChild(tr);    
-      });    
-      rowCount.innerText="সারি: "+c;    
-      greenCount.innerHTML=`<i class="fas fa-check-circle"></i> Approve: ${g}`;    
-      redCount.innerHTML=`<i class="fas fa-times-circle"></i> Reject: ${r}`;    
-    });    
-  } else {    
-    // সেক্টর সিলেক্ট না থাকলে সামারি দেখাবে  
-    db.ref(`users/${currentUserId}/projects`).once("value", snap=>{    
-      let g=0,r=0;    
-      snap.forEach(sector=>{    
-        const rows = sector.child("entries");    
-        rows.forEach(rw=>{    
-          const d = rw.val();    
-          if(d.state==="approved" || d.state==="paid") g++;    
-          if(d.state==="rejected") r++;    
-        });    
-      });    
-      tableBody.innerHTML="<tr><td colspan='4' style='text-align:center; padding:20px;'>প্রথমে সেক্টর নির্বাচন করুন</td></tr>";    
-      rowCount.innerText="সারি: 0";    
-      greenCount.innerHTML=`<i class="fas fa-check-circle"></i> Approve: ${g}`;    
-      redCount.innerHTML=`<i class="fas fa-times-circle"></i> Reject: ${r}`;    
-    });    
-  }    
-}  
+function loadRows() {
+  const tableHeader = document.getElementById("tableHeader");
+
+  if (currentSector) {
+    // সেক্টরের ধরন চেক
+    db.ref(`users/${currentUserId}/projects/${currentSector}`).once('value').then(sectorSnap => {
+      const sectorData = sectorSnap.val();
+      if (!sectorData) return;
+
+      // হেডার কাস্টমাইজড
+      let thirdColHeader = "2FA";
+      if (sectorData.name.includes("Cookies")) {
+        thirdColHeader = "Cookies";
+      }
+
+      // হেডার আপডেট
+      tableHeader.innerHTML = `<th>Username</th><th>Pass</th><th>${thirdColHeader}</th><th>Actions</th>`;
+
+      // এখন entries লোড করা
+      db.ref(`users/${currentUserId}/projects/${currentSector}/entries`).on("value", snap => {
+        tableBody.innerHTML = "";
+        let g = 0, r = 0, c = 0;
+
+        snap.forEach(x => {
+          c++;
+          const d = x.val();
+          const isLocked = d.state !== "draft";
+
+          const tr = document.createElement("tr");
+
+          // Row color logic
+          if (d.state === "approved" || d.state === "paid") tr.style.background = "#ecfdf3";
+          else if (d.state === "rejected") tr.style.background = "#fee2e2";
+          else if (d.state === "pending") tr.style.background = "#f8fafc";
+
+          tr.innerHTML = `
+            <td ${isLocked ? "" : `contenteditable="true" oninput="saveRow('${x.key}','username',this.innerText)"`}>${d.username||""}</td>
+            <td ${isLocked ? "" : `contenteditable="true" oninput="saveRow('${x.key}','password',this.innerText)"`}>${d.password||""}</td>
+            <td ${isLocked ? "" : `contenteditable="true" oninput="saveRow('${x.key}','twoFA',this.innerText)"`}>${d.twoFA||""}</td>
+            <td style="text-align:center;">
+              ${isLocked ? `<span style="color:#64748b; font-weight:bold;"><i class="fas fa-lock"></i> ${d.state.toUpperCase()}</span>` : `<button class="icon-btn red" onclick="deleteRow('${x.key}')"><i class="fas fa-trash"></i></button>`}
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+
+        rowCount.innerText = "সারি: " + c;
+        greenCount.innerHTML = `<i class="fas fa-check-circle"></i> Approve: ${g}`;
+        redCount.innerHTML = `<i class="fas fa-times-circle"></i> Reject: ${r}`;
+      });
+    });
+  } else {
+    // সেক্টর সিলেক্ট না থাকলে ডিফল্ট হেডার + সামারি
+    tableHeader.innerHTML = `<th>Username</th><th>Pass</th><th>2FA</th><th>Actions</th>`;
+
+    db.ref(`users/${currentUserId}/projects`).once("value", snap => {
+      let g = 0, r = 0;
+      snap.forEach(sector => {
+        const rows = sector.child("entries");
+        rows.forEach(rw => {
+          const d = rw.val();
+          if (d.state === "approved" || d.state === "paid") g++;
+          if (d.state === "rejected") r++;
+        });
+      });
+
+      tableBody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:20px;'>প্রথমে সেক্টর নির্বাচন করুন</td></tr>";
+      rowCount.innerText = "সারি: 0";
+      greenCount.innerHTML = `<i class="fas fa-check-circle"></i> Approve: ${g}`;
+      redCount.innerHTML = `<i class="fas fa-times-circle"></i> Reject: ${r}`;
+    });
+  }
+}
   
 let saveTimer = {};  
   
@@ -1065,32 +1104,44 @@ document.getElementById("sendBtn").onclick = () => {
 };    
 document.getElementById('exportCSV').addEventListener('click', exportToExcel);    
     
-function exportToExcel() {    
-  if (!currentSector) {    
-    toast("প্রথমে সেক্টর নির্বাচন করুন");    
-    return;    
-  }    
-    
-  const ref = db.ref(`users/${currentUserId}/projects/${currentSector}/entries`);    
-  ref.once('value').then(snapshot => {    
-    const data = snapshot.val();    
-    if (!data) return toast("ডাউনলোড করার মতো ডাটা নেই");    
-    
-    const headers = ["Username", "Pass", "2FA"];    
-    const rows = Object.values(data).map(d => [d.username, d.password, d.twoFA]);    
-    
-    const worksheetData = [headers, ...rows];    
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);    
-    worksheet['!cols'] = headers.map(() => ({ wch: 25 }));    
-    
-    const workbook = XLSX.utils.book_new();    
-    XLSX.utils.book_append_sheet(workbook, worksheet, currentSector);    
-    XLSX.writeFile(workbook, `${currentSector}.xlsx`);    
-    toast("✅ Excel ডাউনলোড সফল");    
-  }).catch(err => {    
-    toast("Export error: " + err.message);    
-  });    
-}    
+function exportToExcel() {      
+  if (!currentSector) {      
+    toast("প্রথমে সেক্টর নির্বাচন করুন");      
+    return;      
+  }      
+
+  // সেক্টরের ধরন চেক
+  db.ref(`users/${currentUserId}/projects/${currentSector}`).once('value').then(snap => {
+    const sectorData = snap.val();
+    if (!sectorData) return toast("সেক্টর ডাটা পাওয়া যায়নি");
+
+    const ref = db.ref(`users/${currentUserId}/projects/${currentSector}/entries`);
+    ref.once('value').then(snapshot => {      
+      const data = snapshot.val();      
+      if (!data) return toast("ডাউনলোড করার মতো ডাটা নেই");      
+
+      // হেডার কাস্টমাইজড
+      let thirdColHeader = "2FA";
+      if (sectorData.name.includes("Cookies")) {
+        thirdColHeader = "Cookies";
+      }
+
+      const headers = ["Username", "Pass", thirdColHeader];      
+      const rows = Object.values(data).map(d => [d.username, d.password, d.twoFA]);      
+
+      const worksheetData = [headers, ...rows];      
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);      
+      worksheet['!cols'] = headers.map(() => ({ wch: 25 }));      
+
+      const workbook = XLSX.utils.book_new();      
+      XLSX.utils.book_append_sheet(workbook, worksheet, currentSector);      
+      XLSX.writeFile(workbook, `${currentSector}.xlsx`);      
+      toast("✅ Excel ডাউনলোড সফল");      
+    }).catch(err => {      
+      toast("Export error: " + err.message);      
+    }); 
+  }).catch(err => toast("Sector read error: " + err.message));
+}
     
 function checkFeature() {    
   if (!currentSector) {    
@@ -1122,44 +1173,58 @@ function uploadExcelFile(file) {
 
     if (!jsonData || jsonData.length < 2) return showToast('Excel ফাইল খালি!');
 
-    // Empty row skip + valid row only
-    const rowsFromExcel = jsonData.slice(1)
-      .filter(r => r.some(cell => cell !== undefined && cell.toString().trim() !== ""))
-      .map(r => ({
-        username: (r[0] || '').toString().trim(),
-        password: (r[1] || '').toString().trim(),
-        twoFA: (r[2] || '').toString().trim(),
-        state: 'draft',
-        time: Date.now()
-      }));
+    // আগে সেক্টরের ধরন চেক করা
+    db.ref(`users/${currentUserId}/projects/${currentSector}`).once('value').then(sectorSnap => {
+      const sectorData = sectorSnap.val();
+      if (!sectorData) return showToast('সেক্টর ডাটা পাওয়া যায়নি');
 
-    if (rowsFromExcel.length === 0) return showToast('Excel ফাইলে কোন ভ্যালিড row নেই!');
+      const isCookieSector = sectorData.name.includes("Cookies");
 
-    const ref = db.ref(`users/${currentUserId}/projects/${currentSector}/entries`);
+      // Empty row skip + valid row only
+      const rowsFromExcel = jsonData.slice(1)
+        .filter(r => r.some(cell => cell !== undefined && cell.toString().trim() !== ""))
+        .map(r => ({
+          username: (r[0] || '').toString().trim(),
+          password: (r[1] || '').toString().trim(),
+          twoFA: (r[2] || '').toString().trim(),
+          state: 'draft',
+          time: Date.now()
+        }))
+        .filter(r => {
+          // ভ্যালিডেশন: username/password/2FA/ Cookies ফাঁকা হলে reject
+          if (!r.username || !r.password) return false;
+          if (!r.twoFA) return false; // Normal_2FA বা Cookies উভয়ের জন্য চেক
+          return true;
+        });
 
-    ref.once('value').then(snapshot => {
-      const existingData = snapshot.val() || {};
-      const existingUsernames = new Set(Object.values(existingData).map(d => d.username));
+      if (rowsFromExcel.length === 0) return showToast('Excel-এ কোন ভ্যালিড row নেই!');
 
-      // Push only new rows
-      let newRowsCount = 0;
-      rowsFromExcel.forEach(r => {
-        if (!existingUsernames.has(r.username)) {
-          const id = ref.push().key;
-          ref.child(id).set(r).catch(err => toast("Upload error: " + err.message));
-          newRowsCount++;
+      const ref = db.ref(`users/${currentUserId}/projects/${currentSector}/entries`);
+
+      ref.once('value').then(snapshot => {
+        const existingData = snapshot.val() || {};
+        const existingUsernames = new Set(Object.values(existingData).map(d => d.username));
+
+        // Push only new rows
+        let newRowsCount = 0;
+        rowsFromExcel.forEach(r => {
+          if (!existingUsernames.has(r.username)) {
+            const id = ref.push().key;
+            ref.child(id).set(r).catch(err => toast("Upload error: " + err.message));
+            newRowsCount++;
+          }
+        });
+
+        if (newRowsCount > 0) {
+          showToast(`✅ ${newRowsCount} টি নতুন row আপলোড হয়েছে`);
+        } else {
+          showToast('Excel-এ নতুন কোন row পাওয়া যায়নি');
         }
-      });
 
-      if (newRowsCount > 0) {
-        showToast(`✅ ${newRowsCount} টি নতুন row আপলোড হয়েছে`);
-      } else {
-        showToast('Excel-এ নতুন কোন row পাওয়া যায়নি');
-      }
-
-      // সব Firebase write শেষ হলে table refresh
-      setTimeout(() => loadRows(), 500);
-    }).catch(err => toast("Firebase read error: " + err.message));
+        // সব Firebase write শেষ হলে table refresh
+        setTimeout(() => loadRows(), 500);
+      }).catch(err => toast("Firebase read error: " + err.message));
+    }).catch(err => showToast("Sector read error: " + err.message));
   };
 
   reader.readAsArrayBuffer(file);

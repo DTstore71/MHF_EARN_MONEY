@@ -137,7 +137,7 @@
 </div>
 
 <header>
-    <div class="logo-area">MHF <span>CONTROL</span> ~ Instagram</div>
+    <div class="logo-area">MHF <span>CONTROL</span> ~ Facebook</div>
     <button id="logoutBtn" class="btn btn-delete"><i class="fas fa-sign-out-alt"></i> Logout</button>
 </header>
 
@@ -190,15 +190,16 @@
         </div>
         <div class="popup-scroll">
             <table class="pop-table">
-                <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Password</th>
-                        <th>2FA OR COOKIES</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
+                <thead style="position: sticky; top: 0; background: #334155;">
+    <tr>
+        <th><i class="fas fa-fingerprint"></i> UID</th>
+        <th><i class="fas fa-lock"></i> Pass</th>
+        <th><i class="fas fa-shield-alt"></i> 2FA</th>
+        <th><i class="fas fa-envelope"></i> Mail</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+</thead>
                 <tbody id="popupBody"></tbody>
             </table>
         </div>
@@ -265,8 +266,8 @@ function handleSearch(val) {
 
 async function sendAutoMessage(uid, sectorName, count) {
     const msgId = Date.now();
-    await db.ref(`users/${uid}/inbox/${msgId}`).set({
-        text: `বস, আপনার ${sectorName} সেক্টরের ${count} টি ইনস্টাগ্রাম আইডি এডমিন রিসিভ করেছে।`,
+    await db.ref(`users/${uid}/inboxFB/${msgId}`).set({
+        text: `বস, আপনার ${sectorName} সেক্টরের ${count} টি ফেসবুক আইডি এডমিন রিসিভ করেছে।`,
         time: msgId,
         type: "info"
     });
@@ -278,7 +279,7 @@ async function sendCustomMessage() {
     const msg = prompt("আপনার মেসেজটি লিখুন:");
     if(!msg) return;
     const msgId = Date.now();
-    await db.ref(`users/${uid}/inbox/${msgId}`).set({
+    await db.ref(`users/${uid}/inboxFB/${msgId}`).set({
         text: msg,
         time: msgId,
         type: "warning"
@@ -312,13 +313,18 @@ function renderMain() {
     });
 
     // ২. এবার টেবিলের জন্য ডাটা ফিল্টার এবং রেন্ডার করা
-    const filteredGroups = Object.values(groupedData)  
-        .filter(g => g.username.toLowerCase().includes(searchTerm) || g.uid.toLowerCase().includes(searchTerm))  
-        .filter(g => {  
-            const pendingCount = g.entries.filter(e => e.state === 'pending').length;  
-            const paidCount = g.entries.filter(e => e.paid || e.state === 'paid').length;  
-            return !(pendingCount === 0 && paidCount > 0);  
-        });  
+    const filteredGroups = Object.values(groupedData)    
+        .filter(g => {
+            const matchesSearch = g.username.toLowerCase().includes(searchTerm) || 
+                                 g.uid.toLowerCase().includes(searchTerm) ||
+                                 g.entries.some(e => (e.uid && e.uid.includes(searchTerm)) || (e.hotmail && e.hotmail.includes(searchTerm)));
+            return matchesSearch;
+        })
+        .filter(g => {    
+            const pendingCount = g.entries.filter(e => e.state === 'pending').length;    
+            const paidCount = g.entries.filter(e => e.paid || e.state === 'paid').length;    
+            return !(pendingCount === 0 && paidCount > 0);    
+        });
 
     filteredGroups.sort((a, b) => b.lastTime - a.lastTime).forEach(g => {  
         const key = `${g.uid}_${g.pid}`;  
@@ -374,8 +380,8 @@ async function bulkUpdate(key, newState) {
     if (!confirm(`এই গ্রুপের ${pendingEntries.length} টি পেন্ডিং এন্ট্রি কি ${newState === 'approved' ? 'এপ্রুভ' : 'রিজেক্ট'} করবেন?`)) return;
     const updates = {};
     pendingEntries.forEach(e => {
-        updates[`users/${group.uid}/projects/${group.pid}/entries/${e.eid}/state`] = newState;
-        updates[`users/${group.uid}/projects/${group.pid}/entries/${e.eid}/paid`] = false;
+        updates[`users/${group.uid}/fbPro/${group.pid}/entries/${e.eid}/state`] = newState;
+        updates[`users/${group.uid}/fbPro/${group.pid}/entries/${e.eid}/paid`] = false;
     });
     exportedKeys.delete(key);
     localStorage.setItem("mhf_exported_keys", JSON.stringify(Array.from(exportedKeys)));
@@ -385,79 +391,84 @@ async function bulkUpdate(key, newState) {
 async function updateSingleRate(uid, pid, inputId) {
     const newRate = document.getElementById(inputId).value;
     if (newRate !== "" && !isNaN(newRate)) {
-        await db.ref(`users/${uid}/projects/${pid}`).update({ rate: parseFloat(newRate) });
+        await db.ref(`users/${uid}/fbPro/${pid}`).update({ rate: parseFloat(newRate) });
         alert("Rate Updated!");
     }
 }
 
-// --- আপডেট করা setGlobalRate ফাংশন ---
+// --- নতুন গ্লোবাল রেট ফাংশন ---
+// 0_Hotmail এবং 30_Hotmail অনুযায়ী রেট আপডেট
 async function setGlobalRate() {
-    const nRate = prompt("N দিয়ে শুরু হওয়া সেক্টরগুলোর জন্য রেট দিন (Global N):", "10");
-    if (nRate === null || isNaN(nRate)) return;
+    const rate30 = prompt("যে সেক্টরের নামের মধ্যে 30_Hotmail আছে তাদের জন্য রেট দিন:", "15");
+    if (rate30 === null || isNaN(rate30)) return;
 
-    const cRate = prompt("C দিয়ে শুরু হওয়া সেক্টরগুলোর জন্য রেট দিন (Global C):", "15");
-    if (cRate === null || isNaN(cRate)) return;
+    const rate0 = prompt("যে সেক্টরের নামের মধ্যে 0_Hotmail আছে তাদের জন্য রেট দিন:", "10");
+    if (rate0 === null || isNaN(rate0)) return;
 
-    // লোকাল স্টোরেজে সেভ করে রাখা (ভবিষ্যতে ব্যবহারের জন্য)
-    localStorage.setItem("mhf_global_n_rate", nRate);
-    localStorage.setItem("mhf_global_c_rate", cRate);
+    const r30 = parseFloat(rate30);
+    const r0 = parseFloat(rate0);
+
+    localStorage.setItem("mhf_global_hotmail_30_rate", r30);
+    localStorage.setItem("mhf_global_hotmail_0_rate", r0);
 
     const updates = {};
-    const nVal = parseFloat(nRate);
-    const cVal = parseFloat(cRate);
 
     Object.values(groupedData).forEach(g => {
-        const sectorName = g.sector.trim().toUpperCase();
-        let targetRate = null;
+        const sector = (g.sector || "").trim().toUpperCase();
 
-        if (sectorName.startsWith('N')) {
-            targetRate = nVal;
-        } else if (sectorName.startsWith('C')) {
-            targetRate = cVal;
+        if (sector.includes("30_HOTMAIL")) {
+            updates[`users/${g.uid}/fbPro/${g.pid}/rate`] = r30;
         }
-
-        // শুধুমাত্র N বা C থাকলে ডাটাবেস আপডেট হবে
-        if (targetRate !== null) {
-            updates[`users/${g.uid}/projects/${g.pid}/rate`] = targetRate;
+        else if (sector.includes("0_HOTMAIL")) {
+            updates[`users/${g.uid}/fbPro/${g.pid}/rate`] = r0;
         }
     });
 
     if (Object.keys(updates).length > 0) {
         await db.ref().update(updates);
-        alert(`রেট আপডেট হয়েছে!\nN Sectors: ${nVal}৳\nC Sectors: ${cVal}৳`);
+        alert(`Rate আপডেট হয়েছে!\n30_Hotmail: ${r30}৳\n0_Hotmail: ${r0}৳`);
     } else {
-        alert("N বা C দিয়ে শুরু হওয়া কোনো সেক্টর পাওয়া যায়নি!");
+        alert("কোনো 30_Hotmail বা 0_Hotmail সেক্টর পাওয়া যায়নি!");
     }
 }
 
-// --- processGroupedData ফাংশনে ডিফল্ট রেট লজিক আপডেট (ঐচ্ছিক কিন্তু ভালো) ---
-function processGroupedData(){      
-    groupedData = {};      
-    const savedN = parseFloat(localStorage.getItem("mhf_global_n_rate") || "10");
-    const savedC = parseFloat(localStorage.getItem("mhf_global_c_rate") || "15");
+// --- processGroupedData ফাংশন আপডেট ---
+// ডিফল্ট রেট হিসেবে 0_Hotmail/30_Hotmail অনুযায়ী
+function processGroupedData() {
+    groupedData = {};
 
-    Object.entries(usersData).forEach(([uid, u])=>{      
-        if(u.projects){      
-            Object.entries(u.projects).forEach(([pid, p])=>{      
-                const entries = p.entries ? Object.entries(p.entries).map(([eid, e])=>({eid, ...e})) : [];      
-                if(entries.length > 0){      
-                    const key = `${uid}_${pid}`;      
+    const saved30 = parseFloat(localStorage.getItem("mhf_global_hotmail_30_rate") || "15");
+    const saved0 = parseFloat(localStorage.getItem("mhf_global_hotmail_0_rate") || "10");
+
+    Object.entries(usersData).forEach(([uid, u]) => {
+        if (u.fbPro) {
+            Object.entries(u.fbPro).forEach(([pid, p]) => {
+                const entries = p.entries ? Object.entries(p.entries).map(([eid, e]) => ({ eid, ...e })) : [];
+                if (entries.length > 0) {
+                    const key = `${uid}_${pid}`;
                     const lastTime = Math.max(...entries.map(e => e.time || 0));
-                    
-                    // যদি আগে থেকে কোনো স্পেসিফিক রেট না থাকে তবে N/C চেক করবে
+
                     let finalRate = p.rate || 0;
                     if (!finalRate) {
                         const sName = (p.name || "").trim().toUpperCase();
-                        if (sName.startsWith('N')) finalRate = savedN;
-                        else if (sName.startsWith('C')) finalRate = savedC;
+                        if (sName.includes("30_HOTMAIL")) finalRate = saved30;
+                        else if (sName.includes("0_HOTMAIL")) finalRate = saved0;
                         else finalRate = DEFAULT_RATE;
                     }
 
-                    groupedData[key] = { uid, pid, username: u.username || "Unknown", sector: p.name, rate: finalRate, entries, lastTime };      
-                }      
-            });      
-        }      
-    });      
+                    groupedData[key] = {
+                        uid,
+                        pid,
+                        username: u.username || "Unknown",
+                        sector: p.name,
+                        rate: finalRate,
+                        entries,
+                        lastTime
+                    };
+                }
+            });
+        }
+    });
 }
 async function payGroup(key){
     const group = groupedData[key];
@@ -467,9 +478,9 @@ async function payGroup(key){
     const amount = unpaid.length * group.rate;
     const updates = {};
     unpaid.forEach(e => {
-        updates[`users/${group.uid}/projects/${group.pid}/entries/${e.eid}/paid`] = true;
-        updates[`users/${group.uid}/projects/${group.pid}/entries/${e.eid}/state`] = 'paid';
-        updates[`users/${group.uid}/projects/${group.pid}/entries/${e.eid}/paidAmount`] = group.rate;
+        updates[`users/${group.uid}/fbPro/${group.pid}/entries/${e.eid}/paid`] = true;
+        updates[`users/${group.uid}/fbPro/${group.pid}/entries/${e.eid}/state`] = 'paid';
+        updates[`users/${group.uid}/fbPro/${group.pid}/entries/${e.eid}/paidAmount`] = group.rate;
     });
     updates[`users/${group.uid}/MainBalance`] = (usersData[group.uid]?.MainBalance || 0) + amount;
     updates[`users/${group.uid}/TwitterBalance`] = (usersData[group.uid]?.TwitterBalance || 0) + amount;
@@ -478,43 +489,61 @@ async function payGroup(key){
 }
 
 function exportAllData() {
-    if(!groupedData || Object.keys(groupedData).length===0) return alert("ডাটা নেই!");
+    if (!groupedData || Object.keys(groupedData).length === 0) {
+        return alert("ডাটা নেই!");
+    }
 
-    const sheets = {};  // sheetName -> rowList
-    let notifyMap = {};
+    const sheets = {};      // sheet-wise ডাটা রাখার জন্য
+    const notifyMap = {};   // ইউজারকে মেসেজ পাঠানোর জন্য
+    const exportedKeys = new Set(JSON.parse(localStorage.getItem("mhf_exported_keys") || "[]"));
+
     Object.values(groupedData).forEach(g => {
         const key = `${g.uid}_${g.pid}`;
-        const hasAction = g.entries.some(e => e.state === 'approved' || e.state === 'rejected' || e.state === 'paid');
-        if (!hasAction && !exportedKeys.has(key)) {
-            exportedKeys.add(key);
-            if(!notifyMap[g.uid]) notifyMap[g.uid] = [];
-            notifyMap[g.uid].push({sector: g.sector, count: g.entries.length});
 
-            // সেক্টরের প্রথম অক্ষর অনুযায়ী শীট নাম
-            let sheetName = "Others";
-            const firstChar = (g.sector || "").trim().toUpperCase().charAt(0);
-            if(firstChar === 'N') sheetName = "N_Sectors";
-            else if(firstChar === 'C') sheetName = "C_Sectors";
+        // যদি entry ইতিমধ্যেই approved/rejected/paid হয়, skip
+        const hasAction = g.entries.some(e => ['approved', 'rejected', 'paid'].includes(e.state));
+        if (hasAction || exportedKeys.has(key)) return;
 
-            if(!sheets[sheetName]) sheets[sheetName] = [];
-            
-            g.entries.forEach(e => {
-    sheets[sheetName].push({
-        "Worker": g.username,
-        "Sector": g.sector,
-        "Username": e.username || '',
-        "Pass": e.password || '',
-        // C_Sectors হলে "Cookies", অন্য সব জায়গায় 2FA থাকবে
-        [sheetName === "C_Sectors" ? "Cookies" : "2FA"]: e.twoFA || ''
-    });
-});
+        exportedKeys.add(key);
+
+        // notifyMap update
+        if (!notifyMap[g.uid]) notifyMap[g.uid] = [];
+        notifyMap[g.uid].push({ sector: g.sector, count: g.entries.length });
+
+        // sheet name লজিক
+        let sheetName = "Others";
+        const sectorName = (g.sector || "").trim();
+        const upperSector = sectorName.toUpperCase();
+
+        if (upperSector.startsWith("0_HOTMAIL") || upperSector.startsWith("30_HOTMAIL")) {
+            // Excel sheet name safe করে বানানো
+            sheetName = sectorName.replace(/[^a-zA-Z0-9]/g, "_");
         }
+
+        if (!sheets[sheetName]) sheets[sheetName] = [];
+
+        // entries push করা
+        g.entries.forEach(e => {
+            sheets[sheetName].push({
+                "Worker": g.username,
+                "Sector": g.sector,
+                "UID": e.uid || '',
+                "Password": e.password || '',
+                "2FA": e.twoFA || '',
+                "Hotmail": e.hotmail || '',
+                "Time": e.time ? new Date(e.time).toLocaleString() : ''
+            });
+        });
     });
 
-    if(Object.keys(sheets).length === 0) return alert("নতুন কোনো ডাটা নেই!");
+    if (Object.keys(sheets).length === 0) {
+        return alert("নতুন কোনো ডাটা নেই!");
+    }
 
+    // exportedKeys localStorage এ save করা
     localStorage.setItem("mhf_exported_keys", JSON.stringify(Array.from(exportedKeys)));
 
+    // Excel তৈরি করা
     const wb = XLSX.utils.book_new();
     Object.entries(sheets).forEach(([sheetName, rows]) => {
         const ws = XLSX.utils.json_to_sheet(rows);
@@ -523,7 +552,7 @@ function exportAllData() {
 
     XLSX.writeFile(wb, `MHF_Export_${Date.now()}.xlsx`);
 
-    // অটোমেটিক মেসেজ পাঠানো
+    // notifyMap অনুযায়ী মেসেজ পাঠানো
     Object.entries(notifyMap).forEach(([uid, sectors]) => {
         sectors.forEach(s => sendAutoMessage(uid, s.sector, s.count));
     });
@@ -553,33 +582,33 @@ function updateChart(){
 }
 
 // ১. openDetails ফাংশনটি একটু আপডেট করুন যাতে ডাটা রেন্ডার হওয়ার সময় লেটেস্ট ডাটা পায়
-function openDetails(key) {
-    const group = groupedData[key];
-    if (!group) return closePopup(); // গ্রুপ না থাকলে পপআপ বন্ধ
-
-    document.getElementById("popupTitle").innerHTML = `<i class="fas fa-users-cog"></i> ${group.username} - ${group.sector}`;
-    const body = document.getElementById("popupBody");
-    
-    // ম্যাপ করার আগে চেক করে নিন এন্ট্রি আছে কিনা
-    body.innerHTML = group.entries.map(e => `
-        <tr>
-            <td><i class="fas fa-at"></i> ${e.username}</td>
-            <td><i class="fas fa-key"></i> ${e.password}</td>
-            <td style="color:gold"><i class="fas fa-shield-alt"></i> ${e.twoFA}</td>
-            <td><b style="color:${e.state === 'approved' ? 'var(--success)' : (e.state === 'rejected' ? 'var(--danger)' : 'var(--gold)')}">${e.state.toUpperCase()}</b></td>
-            <td>
-                <button class="btn btn-success" onclick="updateStatus('${group.uid}','${group.pid}','${e.eid}','approved','${key}')"><i class="fas fa-check"></i></button>
-                <button class="btn btn-delete" onclick="updateStatus('${group.uid}','${group.pid}','${e.eid}','rejected','${key}')"><i class="fas fa-times"></i></button>
-                <button class="btn btn-delete" onclick="deleteEntry('${group.uid}','${group.pid}','${e.eid}','${key}')"><i class="fas fa-trash-alt"></i></button>
-            </td>
-        </tr>
-    `).join('');
-    document.getElementById("popup").style.display = "flex";
+function openDetails(key) {  
+    const group = groupedData[key];  
+    if (!group) return closePopup();  
+  
+    document.getElementById("popupTitle").innerHTML = `<i class="fas fa-users-cog"></i> ${group.username} - ${group.sector}`;  
+    const body = document.getElementById("popupBody");  
+      
+    body.innerHTML = group.entries.map(e => `  
+        <tr>  
+            <td><i class="fas fa-id-badge"></i> ${e.uid || 'N/A'}</td>  
+            <td><i class="fas fa-key"></i> ${e.password || 'N/A'}</td>  
+            <td style="color:gold"><i class="fas fa-shield-alt"></i> ${e.twoFA || 'N/A'}</td>  
+            <td style="color:#38bdf8"><i class="fas fa-envelope"></i> ${e.hotmail || 'N/A'}</td>  
+            <td><b style="color:${e.state === 'approved' ? 'var(--success)' : (e.state === 'rejected' ? 'var(--danger)' : 'var(--gold)')}">${e.state.toUpperCase()}</b></td>  
+            <td>  
+                <button class="btn btn-success" onclick="updateStatus('${group.uid}','${group.pid}','${e.eid}','approved','${key}')"><i class="fas fa-check"></i></button>  
+                <button class="btn btn-delete" onclick="updateStatus('${group.uid}','${group.pid}','${e.eid}','rejected','${key}')"><i class="fas fa-times"></i></button>  
+                <button class="btn btn-delete" onclick="deleteEntry('${group.uid}','${group.pid}','${e.eid}','${key}')"><i class="fas fa-trash-alt"></i></button>  
+            </td>  
+        </tr>  
+    `).join('');  
+    document.getElementById("popup").style.display = "flex";  
 }
 
 // ২. updateStatus এ 'key' প্যারামিটার পাস করুন যাতে সাথে সাথে পপআপ রিফ্রেশ হয়
 async function updateStatus(uid, pid, eid, state, key) {
-    await db.ref(`users/${uid}/projects/${pid}/entries/${eid}`).update({ state, paid: false });
+    await db.ref(`users/${uid}/fbPro/${pid}/entries/${eid}`).update({ state, paid: false });
     exportedKeys.delete(key);
     localStorage.setItem("mhf_exported_keys", JSON.stringify(Array.from(exportedKeys)));
     // ডাটাবেস লিসেনার অটোমেটিক রেন্ডার মেইন কল করবে, তাই এখানে শুধু পপআপ আপডেট করলেই হবে
@@ -588,7 +617,7 @@ async function updateStatus(uid, pid, eid, state, key) {
 
 async function deleteEntry(uid, pid, eid) {
     if(confirm("চিরতরে ডিলিট করতে চান?")) {
-        await db.ref(`users/${uid}/projects/${pid}/entries/${eid}`).remove();
+        await db.ref(`users/${uid}/fbPro/${pid}/entries/${eid}`).remove();
         openDetails(`${uid}_${pid}`);
     }
 }

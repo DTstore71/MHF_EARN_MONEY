@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MHF Earn Money — Selling Post</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- Firebase Core -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+<!-- Firebase Auth -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+<!-- Firebase Database -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Hind Siliguri', sans-serif;
+}
+
+body {
+  background: white;
+  background-size: cover;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+  font-weight: bold;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1400px;
+  
+  
+  
+  padding: 30px;
+  
+}
+
+.lvl-bronze {
+  background: linear-gradient(145deg, #8c4a19, #cd7f32, #ffb56b);
+  color: #fff;
+  box-shadow: inset 0 1px 3px rgba(255,255,255,.3),
+              0 6px 15px rgba(205,127,50,.6);
+  border: 1px solid #a65e2e;
+}
+
+.lvl-silver {
+  background: linear-gradient(145deg, #9ea7ad, #e0e0e0, #b0bec5);
+  color: #111;
+  box-shadow: inset 0 1px 4px rgba(255,255,255,.8),
+              0 6px 15px rgba(160,170,180,.6);
+  border: 1px solid #9ea7ad;
+}
+
+.lvl-gold {
+  background: linear-gradient(
+    145deg,
+    #7a5c00,
+    #b8860b,
+    #ffd700,
+    #ffcc33,
+    #ffb300,
+    #9c6b00
+  );
+  color: #1a1200;
+  box-shadow:
+    inset 0 2px 6px rgba(255,255,255,.7),
+    inset 0 -2px 6px rgba(0,0,0,.3),
+    0 10px 25px rgba(255,193,7,.9);
+  border: 2px solid #e6b800;
+  text-shadow: 0 1px 1px rgba(255,255,255,.6);
+}
+
+.lvl-diamond {
+  background: linear-gradient(
+    135deg,
+    #f5fdff,
+    #9ff0ff,
+    #00e5ff,
+    #4facfe,
+    #8b7bff,
+    #eafcff
+  );
+  color: black;
+
+  box-shadow:
+    inset 0 1px 4px rgba(255,255,255,.95),
+    inset 0 -1px 3px rgba(0,120,255,.25),
+    0 0 18px rgba(0,229,255,.85),
+    0 0 30px rgba(124,77,255,.7);
+
+  border: 1.5px solid rgba(255,255,255,.85);
+
+  text-shadow:
+    0 0 2px rgba(255,255,255,.9),
+    0 0 4px rgba(180,240,255,.6);
+}
+
+  #userLevel {
+    padding: 10px 14px;
+    border: none;
+    text-align: center;
+    transition: all .3s ease;
+  }
+
+h1 {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+  background: red;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 5px solid black;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding: 15px;
+  background: gold;
+  border-radius: 8px;
+  
+}
+
+.toolbar::-webkit-scrollbar {
+  height: 5px;
+  
+}
+
+.toolbar::-webkit-scrollbar-thumb {
+  background: #2563eb;
+  
+}
+
+.toolbar::-webkit-scrollbar-track {
+  background: #ddd;
+  
+}
+
+.toolbar .btn,
+.toolbar select,
+.toolbar input,
+.toolbar label.btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  min-width: 100px;
+  max-width: 180px;
+  height: 56px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  white-space: normal;
+word-wrap: break-word;
+overflow-wrap: break-word;
+  box-sizing: border-box;
+  border: 0px solid black;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toolbar .btn i,
+.toolbar label.btn i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+}
+
+.btn.primary:hover {
+  transform: translateY(-2px);
+}
+
+.btn.red {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+}
+
+.btn.red:hover {
+  transform: translateY(-2px);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  
+  padding: 18px;
+  margin-bottom: 5px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+thead th {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  padding: 10px;
+  border: 2px solid black;
+}
+
+tbody td {
+  padding: 8px;
+  border: 2px solid black;
+  min-width: 150px;
+}
+
+tbody tr:hover {
+  background: rgba(37, 99, 235, 0.1);
+  transform: scale(1.002);
+}
+
+[contenteditable]:focus {
+  background: rgba(37, 99, 235, 0.05);
+  outline: none;
+  border-radius: 6px;
+}
+
+.icon-btn {
+  padding: 4px 8px;
+  border: 3px solid black;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+.icon-btn:hover {
+  background: #2563eb;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+#rowCount {
+  text-align: center;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+#sendBtn {
+  float: right;
+  margin-bottom: 10px;
+}
+</style>
+</head>
+<body>
+<style>
+  
+</style>
+
+<div class="wrap"> <h1 style="font-size: 23px; border-radius: none; border: none;" id=""><i class="fas fa-envelope-open"></i> MHF Earn Money — Facebook Selling Section</h1>
+
+<div id="colorStats">
+  <p id="greenCount"><i class="fas fa-check-circle"></i>Approve: 0</p>
+  <p id="redCount"><i class="fas fa-times-circle"></i>Reject: 0</p>
+ 
+</div>
+
+<style>
+#colorStats {
+  display: flex;
+  flex-wrap: wrap;           /* অতিরিক্ত বক্স হলে নিচের লাইনে যাবে */
+  gap: 10px;                 /* বক্সের মধ্যে ফাঁকা */
+  justify-content: flex-start; /* ডিফল্টভাবে বাম দিকে বসবে */
+  
+}
+
+#colorStats p {
+  display: flex;
+  flex-direction: column;    /* আইকনকে টেক্সটের উপরে রাখার জন্য */
+  align-items: center;
+  background: #ccc;
+  justify-content: center;
+  padding: 18px 8px;          /* padding কমানো */
+/* border: 3px solid brown; */
+
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;           /* লেখা ছোট করা */
+  
+  line-height: 1.2;          /* compact height */
+  min-width: calc(50% - 10px); /* প্রতি লাইনে দুইটি বক্স ফিট করানোর জন্য */
+  box-sizing: border-box;
+  gap: 4px;                  /* আইকন ও টেক্সটের মধ্যে ফাঁকা কমানো */
+  cursor: default;
+  transition: transform 0.2s;
+  text-align: center;
+  margin-bottom: 20px;       /* নিচের gap সামান্য কমানো */
+}
+
+#colorStats p:last-child {
+  /* যদি লাইনের একমাত্র বক্স হয় (এক্সট্রা), সেটা মাঝখানে হবে */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#greenCount {
+  border-color: #28a745;
+  color: #28a745;
+}
+
+#redCount {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+#levelCount {
+  border-color: #ffc107;
+  color: #ffc107;
+}
+
+#colorStats p:hover {
+  transform: scale(1.05);
+}
+
+#colorStats i {
+  font-size: 20px; 
+}
+</style>
+
+<div id="adminMessageContainer"></div>
+
+
+
+
+<style>
+    #publicMessages{
+  margin-bottom:20px;
+  background:#000;
+  border-left: 4px solid black;
+  border-right: 4px solid black;
+  border-bottom: 4px solid black;
+  border-top: 4px solid black;
+  border-radius: 37px;
+  overflow:hidden;
+}
+
+#publicMessages .msg{
+  padding:14px 10px;
+  font-size:15px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  letter-spacing:0.4px;
+}
+
+#publicMessages .blue{
+  background:#eaf2ff;
+  color:#0f3cff;
+}
+
+#publicMessages .green{
+  background:#ecfdf3;
+  color:#047857;
+  border-top:3px solid #000;
+}
+
+#publicMessages i{
+  font-size:18px;
+}
+</style>
+  
+  <div class="toolbar">
+    <select id="sectorSelect"><option value="">সেক্টর নির্বাচন করুন</option></select>
+    <button class="btn primary" id="addSector"><i class="fas fa-plus"></i> নতুন সেক্টর</button>
+    <button class="btn primary" id="addRow"><i class="fas fa-plus"></i> নতুন সারি</button>
+     <button class="btn primary" id="sendBtn"><i class="fas fa-paper-plane"></i> Send</button>
+    <button class="btn primary" id="exportCSV"><i class="fas fa-file-export"></i>  এক্সপোর্ট</button>
+<label for="xlsxUpload" class="btn primary">
+  <i class="fas fa-upload"></i> আপলোড .xlxs
+</label>    
+<input type="file" id="xlsxUpload" accept=".xlsx" style="display:none;">
+<button class="btn primary" id="inboxBtn" style="position: relative;">
+  <i class="fas fa-inbox"></i> ইনবক্স
+  <span id="inboxBadge" style="
+    display: none;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    border: 2px solid white;
+  ">0</span>
+</button>
+<div id="inboxModal" class="inbox-modal">
+  <div class="inbox-modal-content">
+    <span id="closeInboxModal" class="inbox-close">&times;</span>
+    <h3><i class="fas fa-mail-bulk"></i> MHF INBOX</h3>
+    <div id="inboxMessages" style="max-height:400px; overflow-y:auto; margin-top:10px;"></div>
+  </div>
+</div>
+
+
+
+   
+
+
+<script>
+    
+</script>
+
+<style>
+.inbox-modal {
+  display: none;
+  position: fixed;
+  z-index: 99999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+}
+
+.inbox-modal h3 {
+ background: aqua;
+ border-left: 4px solid black;
+ border-right: 4px solid black;
+ border-radius: 37px;
+ margin-left: 30px;
+ margin-right: 30px;
+ padding: 10px;
+ font-size: 21px;
+}
+
+
+
+.inbox-modal-content {
+  background: #fff;    
+  padding: 20px;    
+  font-weight: bold;
+  border: 0px solid black;    
+  border-radius: 38px;    
+  width: 90%;    
+  max-width: 400px;    
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);    
+  animation: popUp 0.4s ease;    
+  text-align: center;    
+  margin-left: 20px;    
+  margin-right: 20px;
+}
+
+.inbox-close {
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.inbox-close:hover {
+  color: red;
+}
+
+/* Inbox Message Container Styling */
+.inbox-message {
+  background: #f8fafc;
+  
+  border-radius: 12px;
+  padding: 15px;
+  border-bottom: 4px solid blue;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+
+/* Message Text */
+.inbox-message p {
+  margin: 0;
+  font-family: 'Hind Siliguri', sans-serif;
+  font-size: 15px;
+  color: #334155;
+  text-align: left;
+  line-height: 1.5;
+  flex: 1;
+  padding-right: 10px;
+}
+
+/* Delete Button Styling */
+.inbox-message button {
+  background: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.inbox-message button:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+
+/* Message Scrollbar Styling */
+#inboxMessages::-webkit-scrollbar {
+  width: 6px;
+}
+#inboxMessages::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+</style>
+
+<style>
+  #toast {
+    position: fixed;
+  bottom: 40px;
+  left: 50%;
+  font-weight: bold;
+  transform: translateX(-50%) translateY(20px);
+  background: black;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 27px;
+  font-family: "Hind Siliguri", sans-serif;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  opacity: 0;
+  transition: all 0.5s ease;
+  z-index: 9999;
+  }
+
+  #toast.show {
+    opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  }
+</style>
+
+<div id="toast"></div>
+
+
+
+    <button class="btn red" id="deleteSector"><i class="fas fa-trash"></i> সেক্টর মুছুন</button>
+  </div>
+
+
+  <div class="table-wrap">
+    <table id="spreadsheet">
+      <thead><tr id="tableHeader"><th>Uid</th><th>Pass</th><th> 2FA</th><th>Hotmail</th><th>Actions</th></tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div style="text-align: center;" id="rowCount">সারি: 0</div>
+  </div>
+</div>
+<script>
+    document.addEventListener("click",()=>{const s=new Audio("./click.mp3");s.play()});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<style>
+  #toast {
+    position: fixed;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    opacity: 0;
+    transition: 0.4s;
+    z-index: 9999;
+  }
+</style>
+
+<div id="toast"></div>
+
+<script>
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.style.opacity = 1;
+
+    setTimeout(() => {
+      t.style.opacity = 0;
+    }, 2500);
+  }
+</script>
+
+
+<div id="joinModal" style="
+  display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,.7); justify-content:center; align-items:center; z-index:99999;
+">
+  <div style="background:white;padding:25px;border-radius:16px;text-align:center;width:90%;max-width:350px;">
+    <h2 style="margin-bottom:10px;">
+     প্রথমে Telegram চ্যানেলে Join করুন</h2>
+    <p style="margin-bottom:15px;">Join না দিলে আপনি জিমেইল এর কাজ করতে পারবে না!</p>
+
+    <a id="joinNowBtn" href="https://t.me/MHFEarnMoney" target="_blank">
+      <button style="background:#2563eb;color:white;padding:12px 20px;border-radius:8px;border:none;font-size:18px;width:100%;">
+         Join Channel
+      </button>
+    </a>
+  </div>
+</div>
+
+<script>
+  
+  
+  const firebaseConfig = {  
+      apiKey: "AIzaSyB77ruQ-FxUvMAYHsUOipYB4lAQKaavCN0",    
+  authDomain: "ludooclubofficial.firebaseapp.com",    
+  databaseURL: "https://ludooclubofficial-default-rtdb.asia-southeast1.firebasedatabase.app",    
+  projectId: "ludooclubofficial",    
+  storageBucket: "ludooclubofficial.firebasestorage.app",    
+  messagingSenderId: "141984102700",    
+  appId: "1:141984102700:web:37f719e81ae32df69ed489"    
+};    
+    
+firebase.initializeApp(firebaseConfig);    
+    
+const auth = firebase.auth();    
+const db = firebase.database();    
+    
+let currentUserId = null;    
+let currentSector = "";    
+    
+const sectorSelect = document.getElementById("sectorSelect");    
+const tableBody = document.getElementById("tableBody");    
+const rowCount = document.getElementById("rowCount");    
+const greenCount = document.getElementById("greenCount");    
+const redCount = document.getElementById("redCount");    
+const inboxBtn = document.getElementById("inboxBtn");  
+const inboxModal = document.getElementById("inboxModal");  
+const closeInboxModal = document.getElementById("closeInboxModal");  
+  
+inboxBtn.onclick = () => {  
+  inboxModal.style.display = "flex";  
+  loadInbox(); // 🔥 open করলে data load  
+};  
+  
+closeInboxModal.onclick = () => {  
+  inboxModal.style.display = "none";  
+};  
+  
+// বাইরে click করলে close  
+window.onclick = (e) => {  
+  if (e.target === inboxModal) {  
+    inboxModal.style.display = "none";  
+  }  
+};  
+  
+// ১. ইনবক্স ডিলিট ফাংশন (পাথ কারেকশন)  
+window.deleteInbox = (id) => {  
+  if (!confirm("মেসেজটি ডিলিট করবেন?")) return;  
+  // পাথটি আপনার ডেটাবেস স্ট্রাকচার অনুযায়ী আপডেট করা হয়েছে  
+  db.ref(`users/${currentUserId}/inboxFB/${id}`).remove()  
+    .then(() => {  
+      toast("মেসেজ ডিলিট হয়েছে");  
+    })  
+    .catch(err => {  
+      toast("Error: " + err.message);  
+    });  
+};  
+  
+// ২. ইনবক্স লোড করার সময় রিয়েল-টাইম লিসেনার  
+function loadInbox() {  
+  const container = document.getElementById("inboxMessages");  
+  if (!currentUserId) {  
+    container.innerHTML = "<p>লগইন করা নেই</p>";  
+    return;  
+  }  
+    
+  container.innerHTML = "লোড হচ্ছে...";  
+    
+  db.ref(`users/${currentUserId}/inboxFB`).on("value", snap => {  
+    container.innerHTML = "";  
+    if (!snap.exists()) {  
+      container.innerHTML = "<p>কোনো মেসেজ নেই</p>";  
+      return;  
+    }  
+      
+    snap.forEach(msg => {  
+      const d = msg.val();  
+      const div = document.createElement("div");  
+      div.className = "inbox-message";  
+      div.innerHTML = `  
+        <p>${d.text || "মেসেজ পাওয়া যায়নি"}</p>  
+        <button onclick="deleteInbox('${msg.key}')"><i class="fas fa-trash"></i> Delete</button>  
+      `;  
+      container.appendChild(div);  
+    });  
+  }, error => {  
+    container.innerHTML = "<p>Error: " + error.message + "</p>";  
+  });  
+}  
+  
+function checkUnreadMessages() {  
+  if (!currentUserId) return;  
+  const badge = document.getElementById("inboxBadge");  
+  
+  // .on ব্যবহার করলে ডাটাবেসে পরিবর্তন হওয়া মাত্রই ব্যাজ আপডেট হবে  
+  db.ref(`users/${currentUserId}/inboxFB`).on("value", snap => {  
+    let unreadCount = 0;  
+      
+    if (snap.exists()) {  
+      snap.forEach(msg => {  
+        const data = msg.val();  
+        // যদি isRead ফিল্ডটি false থাকে অথবা ফিল্ডটি না থাকে (নতুন মেসেজ)  
+        if (data.isRead === false || data.isRead === undefined) {  
+          unreadCount++;  
+        }  
+      });  
+    }  
+  
+    if (unreadCount > 0) {  
+      badge.innerText = unreadCount;  
+      badge.style.display = "flex"; // 'block' এর বদলে 'flex' দিলে অ্যালাইনমেন্ট সুন্দর হয়  
+    } else {  
+      badge.style.display = "none";  
+    }  
+  });  
+}  
+  
+  
+  
+  
+// ২. ইনবক্স ওপেন করলে সব মেসেজ Read করার ফাংশন  
+function markAllAsRead() {
+  if (!currentUserId) return;
+
+  const inboxRef = db.ref(`users/${currentUserId}/inboxFB`);
+
+  inboxRef.once("value").then(snap => {
+    let updates = {};
+    snap.forEach(msg => {
+      if (msg.val().isRead === false) {
+        updates[`inboxFB/${msg.key}/isRead`] = true;
+      }
+    });
+
+    // Root update না করে শুধু currentUser path ব্যবহার
+    if (Object.keys(updates).length > 0) {
+      db.ref(`users/${currentUserId}`).update(updates)
+        .then(() => console.log("Inbox marked read safely"))
+        .catch(err => toast("Error: " + err.message));
+    }
+  });
+}  
+  
+// আপনার বিদ্যমান inboxBtn.onclick ফাংশনটি আপডেট করুন  
+inboxBtn.onclick = () => {  
+  inboxModal.style.display = "flex";  
+  loadInbox();   
+  markAllAsRead(); // 🔥 ওপেন করার সাথে সাথে সব Read হয়ে যাবে  
+};  
+  
+    
+let toastTimer = null;    
+    
+function toast(msg){    
+  const t = document.getElementById("toast");    
+  t.innerText = msg;    
+  t.classList.add("show");    
+    
+  if(toastTimer) clearTimeout(toastTimer);    
+    
+  toastTimer = setTimeout(()=>{    
+    t.classList.remove("show");    
+  },2500);    
+}    
+    
+auth.onAuthStateChanged(user=>{    
+  if(!user){    
+    location.href = "UserLogin.html";   
+    checkUnreadMessages();   
+    return;    
+  }    
+    
+  currentUserId = user.uid;    
+    
+  loadSectors();    
+    
+  setTimeout(()=>{    
+    loadRows();    
+  },500);    
+});    
+    
+function loadSectors(){    
+  db.ref(`users/${currentUserId}/fbPro`).on("value", snap=>{    
+    const prev = currentSector;    
+    
+    sectorSelect.innerHTML = `<option value="">সেক্টর নির্বাচন করুন</option>`;    
+    
+    snap.forEach(s=>{    
+      const d = s.val();    
+    
+      if(d.name && d.name.trim() !== ""){    
+        const o = document.createElement("option");    
+    
+        o.value = s.key;    
+        o.textContent = d.name + (d.state==="pending"?" (Added)":"");    
+    
+        sectorSelect.appendChild(o);    
+      }    
+    });    
+    
+    if(prev && [...sectorSelect.options].some(opt=>opt.value===prev)){    
+      sectorSelect.value = prev;    
+    }    
+  });    
+}    
+    
+document.getElementById("addSector").onclick = async () => {
+  if (!currentUserId) return toast("প্রথমে লগইন করুন!");
+
+  const choice = prompt(
+    "সেক্টরের ধরন নির্বাচন করুন:\n1) Hotmail 30 Friend\n2) Hotmail 0 Friend\nলিখুন 1 বা 2"
+  );
+  if (choice !== '1' && choice !== '2') {
+    return toast("❌ সঠিক সংখ্যা লিখুন: 1 বা 2");
+  }
+
+  const type = choice === '1' ? '30_Hotmail' : '0_Hotmail';
+
+  const userRef = db.ref(`users/${currentUserId}/fbPro`);
+  const snapshot = await userRef.once("value");
+  const fbPro = snapshot.val() || {};
+
+  let counter = 1;
+  const existingNames = Object.values(fbPro).map(p => p.name);
+  let sectorName;
+  do {
+    sectorName = `${type}-${counter.toString().padStart(2,'0')}`;
+    counter++;
+  } while (existingNames.includes(sectorName));
+
+  // ✅ নতুন সেক্টর শুধু draft থাকবে
+  const newRef = userRef.push({
+    name: sectorName,
+    state: "draft",  // এখানে draft ঠিক আছে
+    time: Date.now()
+  });
+
+  currentSector = newRef.key;
+  sectorSelect.value = currentSector;
+
+  loadSectors();
+  loadRows();
+
+  toast(`নতুন সেক্টর তৈরি হয়েছে: ${sectorName}`);
+};
+    
+document.getElementById("deleteSector").onclick = ()=>{    
+  if(!currentSector) return toast("সেক্টর নির্বাচন করুন");    
+    
+  db.ref(`users/${currentUserId}/fbPro/${currentSector}`).once("value", snap=>{    
+    if(snap.val().state==="pending") return toast("Pending সেক্টর মুছা যাবে না");    
+    
+    if(confirm("সেক্টর মুছবেন?")){    
+      db.ref(`users/${currentUserId}/fbPro/${currentSector}`).remove();    
+      tableBody.innerHTML="";    
+      currentSector="";    
+    }    
+  });    
+};    
+    
+sectorSelect.onchange = e=>{    
+  currentSector = e.target.value;    
+  loadRows();    
+};    
+    
+document.getElementById("addRow").onclick = ()=>{    
+  if(!currentSector) return toast("সেক্টর নির্বাচন করুন");    
+    
+  db.ref(`users/${currentUserId}/fbPro/${currentSector}`).once("value", snap=>{    
+    if(snap.val().state==="pending") return toast("Pending সেক্টরে নতুন সারি যোগ করা যাবে না");    
+    
+    const id = db.ref().push().key;    
+    db.ref(`users/${currentUserId}/fbPro/${currentSector}/entries/${id}`).set({    
+      uid:"",    
+      password:"",    
+      twoFA:"",    
+      state:"draft",    
+      time:Date.now()    
+    });    
+  });    
+};    
+    
+const container = document.getElementById("adminMessageContainer");    
+    
+firebase.database().ref("adminMessageF").on("value", snapshot => {    
+  const data = snapshot.val();    
+  if(data && data.text){    
+    container.innerHTML = `    
+      <p style="    
+        color: black;    
+        text-align: center;    
+        box-shadow: 0 0 10px gold;    
+        border-radius: 12px;    
+        padding: 10px;    
+        margin-bottom: 20px;">    
+        <i style="font-size: 22px; margin-right: 5px; text-shadow: 0 0 10px red; color: yellow;" class="fas fa-fire-alt"></i>    
+        ${data.text}    
+      </p>    
+    `;    
+  }    
+});    
+    
+function loadRows() {
+  const tableHeader = document.getElementById("tableHeader");
+
+  if (currentSector) {
+    db.ref(`users/${currentUserId}/fbPro/${currentSector}`).once('value').then(sectorSnap => {
+      const sectorData = sectorSnap.val();
+      if (!sectorData) return;
+
+      // ৩য় কলাম সবসময় 2FA
+      const thirdColHeader = "2FA";
+
+      // হেডার আপডেট
+      tableHeader.innerHTML = `<th>Uid</th><th>Pass</th><th>${thirdColHeader}</th><th>Hotmail</th><th>Actions</th>`;
+
+      // entries লোড করা
+      db.ref(`users/${currentUserId}/fbPro/${currentSector}/entries`).on("value", snap => {
+        tableBody.innerHTML = "";
+        let g = 0, r = 0, c = 0;
+
+        snap.forEach(x => {
+          c++;
+          const d = x.val();
+          const isLocked = d.state !== "draft";
+
+          const tr = document.createElement("tr");
+
+          // Row color logic
+          if (d.state === "approved" || d.state === "paid") tr.style.background = "#ecfdf3";
+          else if (d.state === "rejected") tr.style.background = "#fee2e2";
+          else if (d.state === "pending") tr.style.background = "#f8fafc";
+
+          tr.innerHTML = `
+            <td ${isLocked ? "" : `contenteditable="true" oninput="saveRow('${x.key}','uid',this.innerText)"`}>${d.uid||""}</td>
+            <td ${isLocked ? "" : `contenteditable="true" oninput="saveRow('${x.key}','password',this.innerText)"`}>${d.password||""}</td>
+            <td ${isLocked ? "" : `contenteditable="true" oninput="saveRow('${x.key}','twoFA',this.innerText)"`}>${d.twoFA||""}</td>
+            <td ${isLocked ? "" : `contenteditable="true" oninput="saveRow('${x.key}','hotmail',this.innerText)"`}>
+  ${d.hotmail || ""}
+</td>
+            <td style="text-align:center;">
+              ${isLocked ? `<span style="color:#64748b; font-weight:bold;"><i class="fas fa-lock"></i> ${d.state.toUpperCase()}</span>` : `<button class="icon-btn red" onclick="deleteRow('${x.key}')"><i class="fas fa-trash"></i></button>`}
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+
+        rowCount.innerText = "সারি: " + c;
+        greenCount.innerHTML = `<i class="fas fa-check-circle"></i> Approve: ${g}`;
+        redCount.innerHTML = `<i class="fas fa-times-circle"></i> Reject: ${r}`;
+      });
+    });
+  } else {
+    tableHeader.innerHTML = `<th>Uid</th><th>Pass</th><th>2FA</th><th>Hotmail</th><th>Actions</th>`;
+    tableBody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:20px;'>প্রথমে সেক্টর নির্বাচন করুন</td></tr>";
+    rowCount.innerText = "সারি: 0";
+  }
+}
+let saveTimer = {};  
+  
+window.saveRow = (id, field, val) => {
+  if (!currentSector) return;
+  if (saveTimer[id]) clearTimeout(saveTimer[id]);
+
+  saveTimer[id] = setTimeout(() => {
+    const rowRef = db.ref(`users/${currentUserId}/fbPro/${currentSector}/entries/${id}`);
+    rowRef.once("value").then(snap => {
+      const data = snap.val();
+      if (!data) return;
+
+      if (data.state !== "draft") {
+        toast("এই ডাটা লক করা আছে!");
+        loadRows();
+        return;
+      }
+
+      // Safe update
+      rowRef.update({ [field]: val.trim() })
+        .then(() => console.log("Row updated safely"))
+        .catch(err => toast("Update error: " + err.message));
+    });
+  }, 800);
+};
+window.deleteRow = (id) => {
+  if (!currentSector) return toast("সেক্টর নির্বাচন করুন");
+  if (!confirm("এই সারিটি মুছতে চান?")) return;
+
+  const rowRef = db.ref(`users/${currentUserId}/fbPro/${currentSector}/entries/${id}`);
+  rowRef.once("value").then(snap => {
+    const data = snap.val();
+    if (!data) return;
+    if (data.state !== "draft") return toast("এই সারিটি ডিলিট করা যাবে না!");
+
+    rowRef.remove()
+      .then(() => toast("সফলভাবে মুছে ফেলা হয়েছে"))
+      .catch(err => toast("Delete error: " + err.message));
+  });
+};
+const killSwitchRef = db.ref("killSwitchF");
+
+killSwitchRef.on("value", snapshot => {
+  const data = snapshot.val();
+  if (data && data.active) {
+    const overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.background = "rgba(0,0,0,0.85)";
+    overlay.style.color = "white";
+    overlay.style.fontSize = "24px";
+    overlay.style.fontWeight = "bold";
+    overlay.style.display = "flex";
+    overlay.style.justifyContent = "center";
+    overlay.style.alignItems = "center";
+    overlay.style.zIndex = 999999;
+    overlay.innerText = data.message || "সার্ভিসটি বর্তমানে বন্ধ আছে। পরে চেষ্টা করুন।";
+
+    // Safe overlay without wiping entire body
+    document.body.appendChild(overlay);
+  }
+});    
+
+document.getElementById("sendBtn").onclick = () => {
+  if (!currentSector) return toast("সেক্টর নির্বাচন করুন");
+  const base = `users/${currentUserId}/fbPro/${currentSector}`;
+  db.ref(base).once("value", sec => {
+    if (sec.val().state === "pending") return toast("আগেই পাঠানো হয়েছে");
+    db.ref(base + "/entries").once("value", rows => {
+      if (!rows.exists()) return toast("খালি সেক্টর");
+
+      let ok = true;
+rows.forEach(r => {
+  const d = r.val();
+  if (!d.uid || !d.password || !d.twoFA || !d.hotmail) ok = false;
+});
+if (!ok) return toast("সব তথ্য পূরণ করুন");
+    
+      if (!ok) return toast("সব তথ্য পূরণ করুন");
+
+      db.ref(base).update({ state: "pending" });
+      rows.forEach(r => {
+        const d = r.val();
+        db.ref(base + "/entries/" + r.key).update({
+          state: "pending",
+          uid: d.uid || "",
+          password: d.password || "",
+          twoFA: d.twoFA || "",
+          hotmail: d.hotmail || ""
+        });
+        db.ref("fbAdmin").push({
+          userId: currentUserId,
+          projectId: currentSector,
+          entryId: r.key,
+          uid: d.uid || "",
+          password: d.password || "",
+          twoFA: d.twoFA || "",
+          hotmail: d.hotmail || "",
+          time: Date.now()
+        });
+      });
+
+      toast("Admin এর কাছে পাঠানো হয়েছে");
+      loadRows();
+    });
+  });
+};
+
+document.getElementById('exportCSV').addEventListener('click', exportToExcel);    
+    
+function exportToExcel() {
+  if (!currentSector) {
+    toast("প্রথমে সেক্টর নির্বাচন করুন");
+    return;
+  }
+
+  db.ref(`users/${currentUserId}/fbPro/${currentSector}`).once('value').then(sectorSnap => {
+    const sectorData = sectorSnap.val();
+    if (!sectorData) return toast("সেক্টর ডাটা পাওয়া যায়নি");
+
+    const ref = db.ref(`users/${currentUserId}/fbPro/${currentSector}/entries`);
+    ref.once('value').then(snapshot => {
+      const data = snapshot.val();
+      if (!data) return toast("ডাউনলোড করার মতো ডাটা নেই");
+
+      // Hotmail-ready header (৪ কলাম)
+      const headers = ["Uid", "Pass", "2FA", "Hotmail"];
+
+      // Excel row: Hotmail ফিল্ড হবে খালি যদি না থাকে
+      const rows = Object.values(data).map(d => [
+        d.uid || "",
+        d.password || "",
+        d.twoFA || "",
+        d.hotmail || ""   // Hotmail field
+      ]);
+
+      const worksheetData = [headers, ...rows];
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+      worksheet['!cols'] = headers.map(() => ({ wch: 25 }));
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, currentSector);
+      XLSX.writeFile(workbook, `${currentSector}.xlsx`);
+      toast("✅ Excel ডাউনলোড সফল");
+    }).catch(err => {
+      toast("Export error: " + err.message);
+    });
+  }).catch(err => toast("Sector read error: " + err.message));
+}    
+function checkFeature() {    
+  if (!currentSector) {    
+    toast("প্রথমে সেক্টর নির্বাচন করুন");    
+    return false;    
+  }    
+  return true;    
+}    
+    
+document.getElementById('xlsxUpload').addEventListener('change', function (e) {    
+  const file = e.target.files[0];    
+  if (file) {    
+    uploadExcelFile(file);    
+  }    
+  e.target.value = '';    
+});    
+    
+function uploadExcelFile(file) {
+  if (!checkFeature()) return;
+  if (!currentUserId) return showToast('প্রথমে লগইন করুন!');
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const data = e.target.result;
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    if (!jsonData || jsonData.length < 2) return showToast('Excel ফাইল খালি!');
+
+    // আগে সেক্টরের ধরন চেক করা
+    db.ref(`users/${currentUserId}/fbPro/${currentSector}`).once('value').then(sectorSnap => {
+      const sectorData = sectorSnap.val();
+      if (!sectorData) return showToast('সেক্টর ডাটা পাওয়া যায়নি');
+
+      const isCookieSector = sectorData.name.includes("Cookies");
+
+      // Empty row skip + valid row only
+      const rowsFromExcel = jsonData.slice(1)
+        .filter(r => r.some(cell => cell !== undefined && cell.toString().trim() !== ""))
+        .map(r => ({
+          uid: (r[0] || '').toString().trim(),
+          password: (r[1] || '').toString().trim(),
+          twoFA: (r[2] || '').toString().trim(),
+           hotmail: (r[3] || '').toString().trim(),
+          state: 'draft',
+          time: Date.now()
+        }))
+        .filter(r => {
+        
+          if (!r.uid || !r.password) return false;
+          if (!r.twoFA) return false; 
+          return true;
+          if (!r.hotmail) return false; 
+          return true;
+        });
+
+      if (rowsFromExcel.length === 0) return showToast('Excel-এ কোন ভ্যালিড row নেই!');
+
+      const ref = db.ref(`users/${currentUserId}/fbPro/${currentSector}/entries`);
+
+      ref.once('value').then(snapshot => {
+        const existingData = snapshot.val() || {};
+        const existinguids = new Set(Object.values(existingData).map(d => d.uid));
+
+        // Push only new rows
+        let newRowsCount = 0;
+        rowsFromExcel.forEach(r => {
+          if (!existinguids.has(r.uid)) {
+            const id = ref.push().key;
+            ref.child(id).set(r).catch(err => toast("Upload error: " + err.message));
+            newRowsCount++;
+          }
+        });
+
+        if (newRowsCount > 0) {
+          showToast(`✅ ${newRowsCount} টি নতুন row আপলোড হয়েছে`);
+        } else {
+          showToast('Excel-এ নতুন কোন row পাওয়া যায়নি');
+        }
+
+        // সব Firebase write শেষ হলে table refresh
+        setTimeout(() => loadRows(), 500);
+      }).catch(err => toast("Firebase read error: " + err.message));
+    }).catch(err => showToast("Sector read error: " + err.message));
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+function loadTable() {    
+  if (!currentSector) return;    
+  const ref = firebase.database().ref(`users/${currentUserId}/tables/${currentSector}`);    
+  ref.once('value').then(snapshot => {    
+    const data = snapshot.val();    
+    if (!data || !data.rows) {    
+      tableBody.innerHTML = '';    
+      rowCount.innerText = "সারি: 0";    
+      return;    
+    }    
+    
+    const rows = data.rows;    
+    tableBody.innerHTML = '';    
+    rows.forEach((r, idx) => {    
+      const tr = document.createElement('tr');    
+      tr.innerHTML = `    
+        <td contenteditable oninput="saveExcelRow(${idx},0,this.innerText)">${r[0] || ''}</td>    
+        <td contenteditable oninput="saveExcelRow(${idx},1,this.innerText)">${r[1] || ''}</td>    
+      `;    
+      tableBody.appendChild(tr);    
+    });    
+    rowCount.innerText = "সারি: " + rows.length;    
+  });    
+}    
+    
+// Excel টেবিলে এডিট হলে Firebase আপডেট    
+function saveExcelRow(rowIdx, colIdx, val) {
+  const ref = db.ref(`users/${currentUserId}/tables/${currentSector}/rows/${rowIdx}`);
+  ref.once('value').then(snap => {
+    const row = snap.val() || [];
+    row[colIdx] = val;
+    // Partial update
+    ref.set(row).catch(err => toast("Excel save error: " + err.message));
+  });
+}    
+    
+      </script>
+</body>
+</html>

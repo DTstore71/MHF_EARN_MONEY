@@ -242,14 +242,27 @@ input[type="checkbox"] {
     <i class="fa-solid fa-clock"></i>
     <input type="number" id="hrs" placeholder="Enter Hours (e.g. 5)">
   </div>
-  <button class="btn-primary" style="background: #1e293b; border: 1px solid #334155;" onclick="startCountdown()">
-    <i class="fa-solid fa-play"></i> Sync Timer
-  </button>
 
   <div class="timer-box">
     <div id="currentVal">Initializing...</div>
   </div>
+  <div class="section-label"><i class="fa-solid fa-stopwatch"></i> Countdown Timer 2</div>
+<div class="timer-box">
+  <div id="currentVal2">Initializing...</div>
+  
+</div>
 
+
+<div class="section-label"><i class="fa-solid fa-stopwatch"></i> Countdown Timer 3</div>
+<div class="timer-box">
+  <div id="currentVal3">Initializing...</div>
+</div>
+  <button class="btn-primary" style="background: #1e293b; border: 1px solid #334155;" onclick="startCountdown()">
+    <i class="fa-solid fa-play"></i> Sync Timer
+  </button>
+  
+<button class="btn-primary" onclick="startCountdown2()">Start Countdown 2</button>
+<button class="btn-primary" onclick="startCountdown3()">Start Countdown 3</button>
   <div id="status"></div>
 </div>
 
@@ -315,6 +328,64 @@ saveBtn.onclick = () => {
     db.ref("adminMessageF").set(data.adminMessageF)
   ]).then(() => notify("All messages synced successfully!"));
 };
+
+const currentDiv2 = document.getElementById("currentVal2");
+const currentDiv3 = document.getElementById("currentVal3");
+
+let timer2 = null;
+let timer3 = null;
+
+function showRemaining2(s, h) {
+  if(timer2) clearInterval(timer2);
+  const e = s + h * 3600000;
+  timer2 = setInterval(() => {
+    const d = e - Date.now();
+    if(d <= 0) { clearInterval(timer2); currentDiv2.textContent = "TIMEOUT"; return; }
+    const x = Math.floor(d / 1000);
+    const hh = String(Math.floor(x / 3600)).padStart(2, "0");
+    const mm = String(Math.floor(x % 3600 / 60)).padStart(2, "0");
+    const ss = String(x % 60).padStart(2, "0");
+    currentDiv2.textContent = `${hh}:${mm}:${ss}`;
+  }, 1000);
+}
+
+function showRemaining3(s, h) {
+  if(timer3) clearInterval(timer3);
+  const e = s + h * 3600000;
+  timer3 = setInterval(() => {
+    const d = e - Date.now();
+    if(d <= 0) { clearInterval(timer3); currentDiv3.textContent = "TIMEOUT"; return; }
+    const x = Math.floor(d / 1000);
+    const hh = String(Math.floor(x / 3600)).padStart(2, "0");
+    const mm = String(Math.floor(x % 3600 / 60)).padStart(2, "0");
+    const ss = String(x % 60).padStart(2, "0");
+    currentDiv3.textContent = `${hh}:${mm}:${ss}`;
+  }, 1000);
+}
+
+db.ref("settings/countdown2").on("value", s => {
+  const d = s.val();
+  if(!d) { currentDiv2.textContent = "No active timer"; return; }
+  showRemaining2(d.start_time, d.duration_hours);
+});
+
+db.ref("settings/countdown3").on("value", s => {
+  const d = s.val();
+  if(!d) { currentDiv3.textContent = "No active timer"; return; }
+  showRemaining3(d.start_time, d.duration_hours);
+});
+
+function startCountdown2() {
+  const h = parseFloat(prompt("Enter hours for Countdown 2"));
+  if(!h || h <= 0) return alert("Invalid hours");
+  db.ref("settings/countdown2").set({start_time: Date.now(), duration_hours: h});
+}
+
+function startCountdown3() {
+  const h = parseFloat(prompt("Enter hours for Countdown 3"));
+  if(!h || h <= 0) return alert("Invalid hours");
+  db.ref("settings/countdown3").set({start_time: Date.now(), duration_hours: h});
+}
 
 featureToggle.onchange = () => db.ref("settings/featureEnabled").set(featureToggle.checked).then(() => notify("Main system updated"));
 killSwitchF.onchange = () => db.ref("killSwitchF").set({active: killSwitchF.checked}).then(() => notify("Switch F updated"));

@@ -296,3 +296,4 @@ popupLinks.forEach(link => {
 function closePopup() {
     document.getElementById("popupButtons").style.display = "none";
 }
+    

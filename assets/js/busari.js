@@ -23,7 +23,45 @@ const closeSound = document.getElementById("closeSound");
 const clickSound = document.getElementById("clickSound");
 
 [openSound, closeSound, clickSound].forEach(s => s.load());
+const timerEl2 = document.getElementById("realTime2");
+const timerEl3 = document.getElementById("realTime3");
 
+function startTimer2(endTime2){
+    setInterval(()=>{
+        if(!endTime2){timerEl2.textContent="All File Received"; return;}
+        const diff = endTime2 - getServerTime();
+        if(diff<=0){
+            timerEl2.textContent="All File Received";
+            return;
+        }
+        const h = Math.floor(diff/3600000);
+        const m = Math.floor((diff%3600000)/60000);
+        const s = Math.floor((diff%60000)/1000);
+        timerEl2.textContent = 
+            String(h).padStart(2,'0') + ":" +
+            String(m).padStart(2,'0') + ":" +
+            String(s).padStart(2,'0');
+    },1000);
+}
+
+// যদি realTime3 এর জন্য আলাদা এন্ড টাইম থাকে
+function startTimer3(endTime3){
+    setInterval(()=>{
+        if(!endTime3){timerEl3.textContent="All File Received"; return;}
+        const diff = endTime3 - getServerTime();
+        if(diff<=0){
+            timerEl3.textContent="All File Received";
+            return;
+        }
+        const h = Math.floor(diff/3600000);
+        const m = Math.floor((diff%3600000)/60000);
+        const s = Math.floor((diff%60000)/1000);
+        timerEl3.textContent = 
+            String(h).padStart(2,'0') + ":" +
+            String(m).padStart(2,'0') + ":" +
+            String(s).padStart(2,'0');
+    },1000);
+}
 const pointsEl = document.getElementById("GmtpPoints");
 const rateEl = document.getElementById("todayRate");
 const timerEl = document.getElementById("realTime");
@@ -31,6 +69,16 @@ const timerEl = document.getElementById("realTime");
 let serverOffset = 0;
 onValue(ref(db, ".info/serverTimeOffset"), s => serverOffset = s.val() || 0);
 const getServerTime = () => Date.now() + serverOffset;
+
+get(ref(db,"settings/countdown2")).then(s=>{
+    const d = s.val();
+    if(d) startTimer2(d.start_time + d.duration_hours*3600000);
+});
+
+get(ref(db,"settings/countdown3")).then(s=>{
+    const d = s.val();
+    if(d) startTimer3(d.start_time + d.duration_hours*3600000);
+});
 
 function getRankIcon(i){
     if(i===0) return '<i class="fa-solid fa-crown rank-icon rank-1"></i>';

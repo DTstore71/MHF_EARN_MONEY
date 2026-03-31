@@ -96,30 +96,37 @@ function loadReferrals() {
     const user = auth.currentUser;
     if (!user) return;
     listDiv.innerHTML = '<p style="text-align:center; padding:20px; color:var(--dim)">Loading...</p>';
+
     db.ref("users").orderByChild("referredBy").equalTo(user.uid).on("value", s => {
         const users = s.val();
         if (!users) {
             listDiv.innerHTML = '<p style="text-align:center; padding:20px; color:var(--dim)">No referrals found.</p>';
             return;
         }
+
         let html = '';
         Object.keys(users).forEach(uid => {
             const u = users[uid];
+            const isVerified = u.verified || false;
+
             html += `<div class="ref-item">
                 <div class="ref-user-info">
                     <img src="${u.profilePic || 'assets/images/logo.png'}" class="ref-img">
                     <div>
-                        <span class="ref-name">${u.username || 'User'}</span>
+                        <span class="ref-name">
+                            ${u.username || 'User'} 
+                            <i class="fa-solid fa-circle-check" style="color:var(--secondary); ${isVerified ? '' : 'display:none;'}"></i>
+                        </span>
                         <span class="ref-uid">ID: ${uid.substring(0, 10)}...</span>
                     </div>
                 </div>
                 <div class="ref-earn"><b class="en">${u.TwitterBalance || 0} TK</b></div>
             </div>`;
         });
+
         listDiv.innerHTML = html;
     });
 }
-
 function checkVerificationStatus(uid, data) {
     const msgEl = document.getElementById("verifyMsg");
     const btnEl = document.getElementById("verifyBtn");
@@ -241,6 +248,7 @@ async function startVerification() {
     const cost = 30;
 
     try {
+        // 1️⃣ ইউজারের ভেরিফিকেশন ও ব্যালেন্স ডেডাকশন
         await userRef.transaction(currentData => {
             if (!currentData) {
                 return {
@@ -251,7 +259,8 @@ async function startVerification() {
                     lastVerifiedAt: 0,
                     duration: 0,
                     username: "User",
-                    profilePic: "assets/images/logo.png"
+                    profilePic: "assets/images/logo.png",
+                    referralBonusGiven: false
                 };
             }
 
@@ -261,10 +270,39 @@ async function startVerification() {
             currentData.MainBalance -= cost;
             currentData.verified = true;
             currentData.lastVerifiedAt = firebase.database.ServerValue.TIMESTAMP;
-            currentData.duration = 30 * 24 * 60 * 60 * 1000;
+            currentData.duration = 30 * 24 * 60 * 60 * 1000; // 30 দিন
 
             return currentData;
         });
+
+        // 2️⃣ রেফারার বোনাস চেক
+        const snapshot = await userRef.once("value");
+        const data = snapshot.val();
+
+        if (data && data.referredBy && !data.referralBonusGiven) {
+            const referrerRef = db.ref("users/" + data.referredBy);
+
+            // 3️⃣ বোনাস অ্যাড
+            await referrerRef.transaction(refData => {
+                if (!refData) return refData;
+                refData.MainBalance = (refData.MainBalance || 0) + 20;
+                refData.TwitterBalance = (refData.TwitterBalance || 0) + 20;
+                return refData;
+            });
+
+            // 4️⃣ ট্রানজেকশন লগ তৈরি
+            await db.ref("withdrawals").push({
+                uid: data.referredBy,       // কে পেয়েছে
+                method: "Referral Bonus",   // বোনাস টাইপ
+                from: user.uid,             // কার রেফারেল
+                amount: 20,
+                status: "credited",
+                time: new Date().toLocaleString()
+            });
+
+            // 5️⃣ ফ্ল্যাগ আপডেট
+            await userRef.update({ referralBonusGiven: true });
+        }
 
         sT("ভেরিফিকেশন সফল!");
     } catch (e) {
@@ -494,51 +532,69 @@ function openLockedModal(id) {
     mO(id);
 }
 
-function lT() {
+async function lT() {
     const list = document.getElementById("tL");
-    list.innerHTML = "Loading...";
+    list.innerHTML = "<p style='text-align:center;padding:20px;color:var(--dim)'>Loading...</p>";
 
     const user = auth.currentUser;
     if (!user) return;
 
-    db.ref("withdrawals")
-        .orderByChild("uid")
-        .equalTo(user.uid)
-        .limitToLast(20) // শুধু latest 20
-        .once("value", snap => {
+    try {
+        const snap = await db.ref("withdrawals")
+            .orderByChild("uid")
+            .equalTo(user.uid)
+            .once("value");
 
-            const data = snap.val();
+        const data = snap.val();
+        if (!data) {
+            list.innerHTML = "<p style='text-align:center;color:var(--dim)'>No transactions</p>";
+            return;
+        }
 
-            if (!data) {
-                list.innerHTML = "<p style='text-align:center;color:var(--dim)'>No transactions</p>";
-                return;
-            }
-
-            const arr = Object.values(data).reverse(); // latest first
-
-            let html = "";
-
-            for (let i = 0; i < arr.length; i++) {
-                const tx = arr[i];
-
-                html += `
-                    <div class="ref-item">
-                        <div>
-                            <span class="ref-name">${tx.method}</span>
-                            <span class="ref-uid">${tx.time}</span>
-                        </div>
-                        <div class="ref-earn">
-                            <b class="en">${tx.amount} TK</b>
-                            <div style="font-size:10px;color:var(--dim)">${tx.status}</div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            list.innerHTML = html;
+        // latest first
+        const arr = Object.entries(data).sort((a, b) => {
+            const timeA = new Date(a[1].time).getTime();
+            const timeB = new Date(b[1].time).getTime();
+            return timeB - timeA;
         });
-}
 
+        let html = "";
+        for (let [key, tx] of arr) {
+            let fromHTML = "";
+
+            // যদি রেফারেল বোনাস হয়
+            if (tx.method === "Referral Bonus" && tx.from) {
+                try {
+                    const userSnap = await db.ref("users/" + tx.from).once("value");
+                    const referrerName = (userSnap.val() && userSnap.val().username) || "Unknown";
+                    fromHTML = `<span class="ref-from" style="font-size:10px;color:var(--dim)">From: ${referrerName}</span>`;
+                } catch (e) {
+                    fromHTML = `<span class="ref-from" style="font-size:10px;color:var(--dim)">From: Unknown</span>`;
+                }
+            }
+
+            html += `
+                <div class="ref-item">
+                    <div>
+                        <span class="ref-name">${tx.method}</span>
+                        <span class="ref-uid">${tx.time}</span>
+                        ${fromHTML}
+                    </div>
+                    <div class="ref-earn">
+                        <b class="en">${tx.amount} TK</b>
+                        <div style="font-size:10px;color:var(--dim)">${tx.status}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        list.innerHTML = html;
+
+    } catch (err) {
+        console.error(err);
+        list.innerHTML = "<p style='text-align:center;color:red'>Error loading transactions</p>";
+    }
+}
 
 
 

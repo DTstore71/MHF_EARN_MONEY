@@ -137,9 +137,9 @@ onValue(q, snap=>{
     render(users,refCount);
 });
 
-get(ref(db,"admin_settings/globalPrice")).then(s=>{
-    const p=s.val();
-    rateEl.textContent=p?"৳ "+parseFloat(p).toFixed(2):"৳ 0.00";
+get(ref(db,"users")).then(snap => {
+    const total = snap.size || snap.numChildren();
+    rateEl.textContent = total + " USERS ";
 });
 
 let endTime=null;

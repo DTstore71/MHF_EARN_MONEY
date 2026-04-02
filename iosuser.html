@@ -285,6 +285,7 @@
                     <td>
                         <button class="btn btn-view" onclick="viewUser('${u.id}')">VIEW</button>
                         <button class="btn btn-ban" onclick="toggleBan('${u.id}', ${u.banned})">${u.banned ? 'UNBAN' : 'BAN'}</button>
+                        <button class="btn btn-danger" onclick="removeUser('${u.id}')">REMOVE</button>
                     </td>
                 </tr>
             `;
@@ -306,6 +307,21 @@
     function viewUser(id) {
         db.ref(`users/${id}`).once('value', s => alert(JSON.stringify(s.val(), null, 2)));
     }
+    
+    // Remove User Function - একবারে পুরো ইউজারের ডাটা মুছে দেবে
+async function removeUser(id) {
+    if(confirm("আপনি কি নিশ্চিতভাবে এই ইউজারটি সম্পূর্ণ মুছে দিতে চান?")) {
+        try {
+            // Firebase থেকে পুরো ইউজারের ডাটা রিমুভ
+            await db.ref(`users/${id}`).remove();
+            alert("ইউজার সফলভাবে সম্পূর্ণ মুছে ফেলা হয়েছে।");
+            loadTopUsers(); // টেবিল রিফ্রেশ
+        } catch (err) {
+            console.error(err);
+            alert("কিছু সমস্যা হয়েছে! পুনরায় চেষ্টা করুন।");
+        }
+    }
+}
 </script>
 <script>
     document.addEventListener("click",()=>{const s=new Audio("./click.mp3");s.play()});

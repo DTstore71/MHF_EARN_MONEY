@@ -12,17 +12,116 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        :root {
-            --bg: #030712;
-            --card: rgba(17, 24, 39, 0.7);
-            --primary: #fbbf24;
-            --secondary: #38bdf8;
-            --success: #10b981;
-            --error: #f43f5e;
-            --text: #f8fafc;
-            --dim: #94a3b8;
-            --border: rgba(255, 255, 255, 0.08);
-        }
+:root {
+    /* base */
+    --bg: #020617;
+    --bg-soft: #030a1a;
+
+    /* cards */
+    --card: rgba(15, 23, 42, 0.65);
+    --card-solid: #0f172a;
+
+    /* brand colors */
+    --primary: #fbbf24;
+    --secondary: #38bdf8;
+    --accent: #a78bfa;
+
+    /* states */
+    --success: #22c55e;
+    --error: #f43f5e;
+    --warning: #f59e0b;
+
+    /* text */
+    --text: #e2e8f0;
+    --text-soft: #94a3b8;
+    --text-dim: #64748b;
+
+    /* borders */
+    --border: rgba(255,255,255,0.06);
+    --border-strong: rgba(255,255,255,0.12);
+
+    /* gradients (more cinematic) */
+    --grad-primary: linear-gradient(135deg, #fbbf24, #f59e0b);
+    --grad-blue: linear-gradient(135deg, #38bdf8, #6366f1);
+    --grad-purple: linear-gradient(135deg, #a78bfa, #ec4899);
+    --grad-green: linear-gradient(135deg, #22c55e, #4ade80);
+
+    /* ambient glow (IMPORTANT upgrade) */
+    --glow-primary: 0 0 40px rgba(251,191,36,0.35);
+    --glow-blue: 0 0 40px rgba(56,189,248,0.35);
+    --glow-purple: 0 0 40px rgba(167,139,250,0.35);
+
+    /* shadows (depth system 🔥) */
+    --shadow-sm: 0 4px 10px rgba(0,0,0,0.2);
+    --shadow-md: 0 10px 30px rgba(0,0,0,0.35);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.6);
+
+    /* glass blur */
+    --blur: blur(16px);
+}
+
+.s-card, .balance-card, .rank-box, .lb-wrap {
+    position: relative;
+    overflow: hidden;
+    background: rgba(17, 24, 39, 0.75);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+
+     box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+
+    will-change: transform;
+}
+
+.s-card::before,
+.balance-card::before,
+.rank-box::before,
+.lb-wrap::before {
+    content: "";
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    background: #fbbf24;
+    opacity: 0.12;
+    top: -40px;
+    right: -40px;
+    border-radius: 50%;
+
+    filter: blur(20px);
+}
+
+.s-card::after,
+.balance-card::after,
+.rank-box::after,
+.lb-wrap::after {
+    content: "";
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    background: #38bdf8;
+    opacity: 0.10;
+    bottom: -40px;
+    left: -40px;
+    border-radius: 50%;
+    filter: blur(18px);
+}
+
+
+.s-card > *,
+.balance-card > *,
+.rank-box > *,
+.lb-wrap > * {
+    position: relative;
+    z-index: 2;
+}
+
+
+.s-card:hover,
+.balance-card:hover,
+.rank-box:hover,
+.lb-wrap:hover {
+    transform: translateY(-2px);
+    transition: 0.2s ease;
+}
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Hind Siliguri', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); padding: 15px; min-height: 100vh; background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #030712 100%); }
         .en { font-family: 'Poppins', sans-serif; }
@@ -158,7 +257,7 @@
         <h3 style="margin-bottom:10px"><i class="fa-solid fa-money-bill-transfer" style="color: var(--success);"></i> Redeem Points</h3>
         <p style="font-size: 12px; color: var(--dim); margin-bottom: 20px;"><I class="fas fa-coins"></I> Exchange Rate: 100 Points = 100৳</p>
         <input type="number" id="pRedeemAmount" placeholder="Enter Points (Min 100)">
-        <button class="btn" onclick="redeemPoints()">Confirm Redeem</button>
+        <button class="btn" onclick="redeemPoints()"> <i class="fas fa-lightbulb"></i> Confirm Redeem</button>
     </div>
 </div>
 <div id="eM" class="m" onclick="mC(event, 'eM')">
@@ -168,7 +267,8 @@
         <input type="text" id="nP" placeholder="New Phone">
         <input type="text" id="nI" placeholder="Profile Image URL">
         <input type="password" id="oP" placeholder="Current Password">
-        <button class="btn" onclick="sC()">Confirm Changes</button>
+        <button class="btn" onclick="sC()"> <i class="fas fa-lightbulb"></i>
+        Confirm Changes</button>
     </div>
 </div>
 <div id="wM" class="m" onclick="mC(event, 'wM')">
@@ -178,7 +278,7 @@
         <input type="text" id="wA" placeholder="Account Number">
         <input type="number" id="wAm" placeholder="Amount (Min 200)">
         <input type="password" id="wP" placeholder="Password">
-        <button class="btn" onclick="sW()">Withdraw Now</button>
+        <button class="btn" onclick="sW()"><i class="fas fa-lightbulb"></i> Withdraw Now</button>
     </div>
 </div>
 <div id="tM" class="m" onclick="mC(event, 'tM')">

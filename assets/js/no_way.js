@@ -556,11 +556,29 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast('Excel ফাইল খালি বা row কম!');
           return;
         }
+        const firstRow = jsonData[0].map(h => (h || '').toString().trim().toLowerCase());
 
-        const headersFromExcel = jsonData[0].map(h => (h || '').toString().trim());
-        const rowsFromExcel = jsonData.slice(1)
-          .filter(r => r.length >= 2)
-          .map(r => [(r[0] || '').toString().trim().toLowerCase(), (r[1] || '').toString().trim()]);
+const isHeader = firstRow.includes('gmail') || 
+                 firstRow.includes('email') || 
+                 firstRow.includes('password');
+
+let headersFromExcel;
+let dataRows;
+
+if (isHeader) {
+  headersFromExcel = jsonData[0].map(h => (h || '').toString().trim());
+  dataRows = jsonData.slice(1);
+} else {
+  headersFromExcel = ['Gmail','Password'];
+  dataRows = jsonData;
+}
+
+const rowsFromExcel = dataRows
+  .filter(r => r.length >= 2)
+  .map(r => [
+    (r[0] || '').toString().trim().toLowerCase(),
+    (r[1] || '').toString().trim()
+  ]);
 
         const userTableRef = firebase.database().ref(`users/${userId}/tables/${selectedSector}`);
 
@@ -799,5 +817,3 @@ document.getElementById('exportCSV').addEventListener('click', () => {
       XLSX.writeFile(wb, `${currentSector}.xlsx`);
     }).catch(err => alert('Export error: ' + err.message));
 });
-
-  

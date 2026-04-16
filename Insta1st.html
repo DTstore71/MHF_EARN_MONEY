@@ -1194,21 +1194,38 @@ function uploadExcelFile(file) {
   reader.onload = function (e) {
     const data = e.target.result;
     const workbook = XLSX.read(data, { type: 'array' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-    if (!jsonData || jsonData.length < 2) return showToast('Excel ফাইল খালি!');
+    if (!jsonData || jsonData.length === 0) return showToast('Excel ফাইল খালি!');
 
-    // আগে সেক্টরের ধরন চেক করা
+    // Header detect
+    const firstRow = jsonData[0].map(h => (h || '').toString().trim().toLowerCase());
+
+    const isHeader = firstRow.includes('gmail') ||
+                     firstRow.includes('email') ||
+                     firstRow.includes('password');
+
+    let headersFromExcel = [];
+    let dataRows = [];
+
+    if (isHeader) {
+      headersFromExcel = jsonData[0].map(h => (h || '').toString().trim());
+      dataRows = jsonData.slice(1);
+    } else {
+      headersFromExcel = ['Gmail', 'Password', '2FA'];
+      dataRows = jsonData;
+    }
+
+    // Sector check
     db.ref(`users/${currentUserId}/projects/${currentSector}`).once('value').then(sectorSnap => {
       const sectorData = sectorSnap.val();
       if (!sectorData) return showToast('সেক্টর ডাটা পাওয়া যায়নি');
 
       const isCookieSector = sectorData.name.includes("Cookies");
 
-      // Empty row skip + valid row only
-      const rowsFromExcel = jsonData.slice(1)
+      // Clean + filter rows
+      const rowsFromExcel = dataRows
         .filter(r => r.some(cell => cell !== undefined && cell.toString().trim() !== ""))
         .map(r => ({
           username: (r[0] || '').toString().trim(),
@@ -1218,9 +1235,8 @@ function uploadExcelFile(file) {
           time: Date.now()
         }))
         .filter(r => {
-          // ভ্যালিডেশন: username/password/2FA/ Cookies ফাঁকা হলে reject
           if (!r.username || !r.password) return false;
-          if (!r.twoFA) return false; // Normal_2FA বা Cookies উভয়ের জন্য চেক
+          if (!r.twoFA) return false;
           return true;
         });
 
@@ -1230,14 +1246,16 @@ function uploadExcelFile(file) {
 
       ref.once('value').then(snapshot => {
         const existingData = snapshot.val() || {};
-        const existingUsernames = new Set(Object.values(existingData).map(d => d.username));
+        const existingUsernames = new Set(
+          Object.values(existingData).map(d => d.username)
+        );
 
-        // Push only new rows
         let newRowsCount = 0;
+
         rowsFromExcel.forEach(r => {
           if (!existingUsernames.has(r.username)) {
             const id = ref.push().key;
-            ref.child(id).set(r).catch(err => toast("Upload error: " + err.message));
+            ref.child(id).set(r).catch(err => showToast("Upload error: " + err.message));
             newRowsCount++;
           }
         });
@@ -1248,14 +1266,14 @@ function uploadExcelFile(file) {
           showToast('Excel-এ নতুন কোন row পাওয়া যায়নি');
         }
 
-        // সব Firebase write শেষ হলে table refresh
         setTimeout(() => loadRows(), 500);
-      }).catch(err => toast("Firebase read error: " + err.message));
+      }).catch(err => showToast("Firebase read error: " + err.message));
     }).catch(err => showToast("Sector read error: " + err.message));
   };
 
   reader.readAsArrayBuffer(file);
 }
+
 function loadTable() {    
   if (!currentSector) return;    
   const ref = firebase.database().ref(`users/${currentUserId}/tables/${currentSector}`);    
